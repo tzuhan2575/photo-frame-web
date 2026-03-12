@@ -69,10 +69,7 @@ function render() {
         <section class="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-8">
           <div class="w-full rounded-3xl bg-white p-6 shadow-lg">
             <div class="mb-5 text-center">
-              <h1 class="text-2xl font-bold">活動拍照打卡框</h1>
-              <p class="mt-2 text-sm leading-6 text-neutral-600">
-                先選擇喜歡的樣式，再開始拍照。拍完後可儲存或分享圖片。
-              </p>
+              <h1 class="text-2xl font-bold">企鵝吃鯊魚工作室 - 拍照打卡框</h1>
             </div>
 
             <div class="mb-5">
@@ -91,7 +88,7 @@ function render() {
               <h2 class="text-sm font-semibold text-neutral-900">使用方式</h2>
               <div class="mt-3 space-y-2 text-sm leading-6 text-neutral-600">
                 <p>1. 先選擇喜歡的拍照框樣式</p>
-                <p>2. 點擊「開始拍照」開啟相機</p>
+                <p>2. 點擊「開始拍照」</p>
                 <p>3. 拍完後可儲存或分享圖片</p>
               </div>
             </div>
@@ -103,14 +100,11 @@ function render() {
               >
                 開始拍照
               </button>
-
-              <button
-                id="usage-btn"
-                class="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium text-neutral-800"
-              >
-                使用說明
-              </button>
             </div>
+
+            <p class="mt-4 text-center text-xs leading-5 text-neutral-500">
+              照片只會留在自己的手機裡，我們不會讀取、儲存或備份任何拍攝內容。拍完後請記得先儲存圖片。
+            </p>
           </div>
         </section>
       </main>
@@ -127,12 +121,6 @@ function render() {
         selectedFrame = frameId;
         render();
       });
-    });
-
-    document.querySelector("#usage-btn").addEventListener("click", () => {
-      alert(
-        "請先選擇樣式，再點「開始拍照」。拍完後可使用「儲存 / 分享」來保存圖片。",
-      );
     });
   }
 
