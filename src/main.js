@@ -771,7 +771,6 @@ async function saveOrShareImage() {
     ) {
       await navigator.share({
         files: [file],
-        title: "拍照打卡框",
       });
       return;
     }
