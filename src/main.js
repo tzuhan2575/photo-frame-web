@@ -1,6 +1,7 @@
 import "./style.css";
 
 let currentScreen = "home";
+let currentLanguage = "zh";
 let stream = null;
 let facingMode = "environment";
 let capturedImage = null;
@@ -19,6 +20,195 @@ const OUTPUT_WIDTH = 1080;
 const OUTPUT_HEIGHT = 1920;
 const OUTPUT_RATIO = OUTPUT_WIDTH / OUTPUT_HEIGHT;
 
+const TEXTS = {
+  zh: {
+    langZh: "中文",
+    langEn: "EN",
+    langJa: "日本語",
+    langKo: "한국어",
+
+    title: "拍照打卡框",
+    studio: "企鵝吃鯊魚工作室製作",
+    chooseFrame: "選擇拍照框樣式",
+    currentStyle: "目前",
+    previewLoadingHint: "第一次開啟時，預覽圖可能需要加載十幾秒。",
+    chooseDate: "選擇日期（可不選）",
+    noDate: "不顯示",
+    usage: "使用方式",
+    step1: "1. 先選擇喜歡的拍照框樣式",
+    step2: "2. 選擇是否顯示日期",
+    step3: "3. 點擊「開始拍照」",
+    step3Hint: "（點擊後請允許使用相機功能）",
+    step4: "4. 拍完後可儲存或分享圖片",
+    startPhoto: "開始拍照",
+    noStore1: "我們不會讀取、儲存或備份任何拍攝內容",
+    noStore2: "拍完後請記得先儲存圖片",
+
+    previewTitle: "拍照預覽",
+    back: "返回",
+    switchCamera: "切換鏡頭",
+    capture: "拍照",
+    processing: "處理中...",
+
+    resultTitle: "預覽成品",
+    retake: "重新拍照",
+    saveShare: "儲存 / 分享",
+    iphoneHint: "iPhone 可點「儲存 / 分享」後，選擇「儲存影像」。",
+
+    styleA: "樣式 A",
+    styleB: "樣式 B",
+    cute: "可愛版",
+    simple: "簡約版",
+
+    cameraError: "無法開啟相機，請確認你已允許相機權限。",
+    cameraNotReady: "相機畫面尚未準備完成，請稍後再試一次。",
+    captureError: "拍照失敗，請再試一次。",
+  },
+
+  en: {
+    langZh: "中文",
+    langEn: "EN",
+    langJa: "日本語",
+    langKo: "한국어",
+
+    title: "Photo Frame",
+    studio: "Made by PenguShark Studio",
+    chooseFrame: "Choose a frame style",
+    currentStyle: "Current",
+    previewLoadingHint:
+      "On first load, preview images may take several seconds to appear.",
+    chooseDate: "Choose a date (optional)",
+    noDate: "None",
+    usage: "How to use",
+    step1: "1. Choose your preferred frame style",
+    step2: "2. Choose whether to show the date",
+    step3: '3. Tap "Start"',
+    step3Hint: "(Please allow camera access after tapping.)",
+    step4: "4. Save or share your photo after taking it",
+    startPhoto: "Start",
+    noStore1: "We do not read, store, or back up any photo content.",
+    noStore2: "Please remember to save your image after taking it.",
+
+    previewTitle: "Camera Preview",
+    back: "Back",
+    switchCamera: "Switch Camera",
+    capture: "Capture",
+    processing: "Processing...",
+
+    resultTitle: "Preview Result",
+    retake: "Retake",
+    saveShare: "Save / Share",
+    iphoneHint: 'On iPhone, tap "Save / Share" and choose "Save Image".',
+
+    styleA: "Style A",
+    styleB: "Style B",
+    cute: "Cute",
+    simple: "Simple",
+
+    cameraError:
+      "Unable to access the camera. Please make sure camera permission is allowed.",
+    cameraNotReady:
+      "The camera preview is not ready yet. Please try again in a moment.",
+    captureError: "Failed to capture the photo. Please try again.",
+  },
+
+  ja: {
+    langZh: "中文",
+    langEn: "EN",
+    langJa: "日本語",
+    langKo: "한국어",
+
+    title: "フォトフレーム",
+    studio: "PenguShark Studio 制作",
+    chooseFrame: "フレームを選択",
+    currentStyle: "現在",
+    previewLoadingHint:
+      "初回はプレビュー画像の読み込みに数秒かかる場合があります。",
+    chooseDate: "日付を選択（任意）",
+    noDate: "表示しない",
+    usage: "使い方",
+    step1: "1. お好みのフレームを選択",
+    step2: "2. 日付を表示するか選択",
+    step3: "3. 「撮影開始」をタップ",
+    step3Hint: "（タップ後、カメラの使用を許可してください）",
+    step4: "4. 撮影後に画像を保存または共有",
+    startPhoto: "撮影開始",
+    noStore1:
+      "撮影内容を読み取ったり、保存したり、バックアップしたりすることはありません。",
+    noStore2: "撮影後は画像の保存をお忘れなく。",
+
+    previewTitle: "撮影プレビュー",
+    back: "戻る",
+    switchCamera: "カメラ切替",
+    capture: "撮影",
+    processing: "処理中...",
+
+    resultTitle: "完成プレビュー",
+    retake: "撮り直し",
+    saveShare: "保存 / 共有",
+    iphoneHint:
+      "iPhoneでは「保存 / 共有」を押して「画像を保存」を選択してください。",
+
+    styleA: "スタイル A",
+    styleB: "スタイル B",
+    cute: "かわいい",
+    simple: "シンプル",
+
+    cameraError: "カメラを開けません。カメラの使用許可を確認してください。",
+    cameraNotReady:
+      "カメラ映像の準備がまだできていません。少し待ってからもう一度お試しください。",
+    captureError: "撮影に失敗しました。もう一度お試しください。",
+  },
+
+  ko: {
+    langZh: "中文",
+    langEn: "EN",
+    langJa: "日本語",
+    langKo: "한국어",
+
+    title: "포토 프레임",
+    studio: "PenguShark Studio 제작",
+    chooseFrame: "프레임 선택",
+    currentStyle: "현재",
+    previewLoadingHint:
+      "처음 열 때 미리보기 이미지가 표시되기까지 몇 초 걸릴 수 있습니다.",
+    chooseDate: "날짜 선택 (선택 사항)",
+    noDate: "표시 안 함",
+    usage: "사용 방법",
+    step1: "1. 원하는 프레임 스타일을 선택하세요",
+    step2: "2. 날짜 표시 여부를 선택하세요",
+    step3: '3. "촬영 시작"을 누르세요',
+    step3Hint: "(누른 후 카메라 권한을 허용해 주세요.)",
+    step4: "4. 촬영 후 사진을 저장하거나 공유하세요",
+    startPhoto: "촬영 시작",
+    noStore1: "촬영한 내용은 읽거나 저장하거나 백업하지 않습니다.",
+    noStore2: "촬영 후 이미지를 꼭 저장해 주세요.",
+
+    previewTitle: "촬영 미리보기",
+    back: "뒤로",
+    switchCamera: "카메라 전환",
+    capture: "촬영",
+    processing: "처리 중...",
+
+    resultTitle: "결과 미리보기",
+    retake: "다시 촬영",
+    saveShare: "저장 / 공유",
+    iphoneHint:
+      'iPhone에서는 "저장 / 공유"를 누른 뒤 "이미지 저장"을 선택하세요.',
+
+    styleA: "스타일 A",
+    styleB: "스타일 B",
+    cute: "귀여움",
+    simple: "심플",
+
+    cameraError:
+      "카메라를 열 수 없습니다. 카메라 권한을 허용했는지 확인해 주세요.",
+    cameraNotReady:
+      "카메라 화면이 아직 준비되지 않았습니다. 잠시 후 다시 시도해 주세요.",
+    captureError: "촬영에 실패했습니다. 다시 시도해 주세요.",
+  },
+};
+
 const DATE_OPTIONS = [
   { id: "", label: "不顯示", value: "" },
   { id: "03.20", label: "03.20", value: "2026.03.20" },
@@ -29,8 +219,8 @@ const DATE_OPTIONS = [
 const FRAME_OPTIONS = {
   a: {
     id: "a",
-    name: "樣式 A",
-    description: "可愛版",
+    nameKey: "styleA",
+    descriptionKey: "cute",
     previewSrc: `${import.meta.env.BASE_URL}preview-a.png`,
     frameSrc: `${import.meta.env.BASE_URL}frame-a.png`,
     dateText: {
@@ -49,8 +239,8 @@ const FRAME_OPTIONS = {
   },
   b: {
     id: "b",
-    name: "樣式 B",
-    description: "簡約版",
+    nameKey: "styleB",
+    descriptionKey: "simple",
     previewSrc: `${import.meta.env.BASE_URL}preview-b.png`,
     frameSrc: `${import.meta.env.BASE_URL}frame-b.png`,
     dateText: {
@@ -103,6 +293,13 @@ function getSelectedFrameOption() {
   return FRAME_OPTIONS[selectedFrame];
 }
 
+function getTranslatedDateOptions() {
+  const t = TEXTS[currentLanguage];
+  return DATE_OPTIONS.map((option) =>
+    option.id === "" ? { ...option, label: t.noDate } : option,
+  );
+}
+
 function markPreviewLoaded(frameId) {
   previewLoaded[frameId] = true;
 
@@ -122,6 +319,7 @@ function markPreviewLoaded(frameId) {
 }
 
 function showProcessingOverlay() {
+  const t = TEXTS[currentLanguage];
   const overlay = document.querySelector("#camera-processing-overlay");
   const captureBtn = document.querySelector("#capture-btn");
   const switchBtn = document.querySelector("#switch-camera-btn");
@@ -134,7 +332,7 @@ function showProcessingOverlay() {
 
   if (captureBtn) {
     captureBtn.disabled = true;
-    captureBtn.textContent = "處理中...";
+    captureBtn.textContent = t.processing;
     captureBtn.classList.add("opacity-50");
   }
 
@@ -150,6 +348,7 @@ function showProcessingOverlay() {
 }
 
 function hideProcessingOverlay() {
+  const t = TEXTS[currentLanguage];
   const overlay = document.querySelector("#camera-processing-overlay");
   const captureBtn = document.querySelector("#capture-btn");
   const switchBtn = document.querySelector("#switch-camera-btn");
@@ -162,7 +361,7 @@ function hideProcessingOverlay() {
 
   if (captureBtn) {
     captureBtn.disabled = false;
-    captureBtn.textContent = "拍照";
+    captureBtn.textContent = t.capture;
     captureBtn.classList.remove("opacity-50");
   }
 
@@ -269,14 +468,6 @@ function layoutPreviewVideo() {
   }
 }
 
-function updatePreviewLayout() {
-  layoutPreviewFrame();
-  requestAnimationFrame(() => {
-    layoutPreviewVideo();
-    layoutPreviewDateText();
-  });
-}
-
 function layoutPreviewDateText() {
   const wrapper = document.querySelector("#camera-frame-wrapper");
   const label = document.querySelector("#date-preview-label");
@@ -293,17 +484,26 @@ function layoutPreviewDateText() {
   const left = frameOption.dateText.x * scaleX;
   const top = frameOption.dateText.y * scaleY;
   const fontSize = frameOption.dateText.fontSize * scale;
-  const strokeWidth = (frameOption.dateText.strokeWidth || 3) * scale;
+  const strokeWidth = (frameOption.dateText.strokeWidth || 0) * scale;
 
   label.style.left = `${left}px`;
   label.style.top = `${top}px`;
   label.style.transform = "translate(-50%, -50%)";
   label.style.fontSize = `${fontSize}px`;
+
   if ((frameOption.dateText.strokeWidth || 0) > 0) {
     label.style.webkitTextStroke = `${strokeWidth}px ${frameOption.dateText.strokeColor}`;
   } else {
     label.style.webkitTextStroke = "0px transparent";
   }
+}
+
+function updatePreviewLayout() {
+  layoutPreviewFrame();
+  requestAnimationFrame(() => {
+    layoutPreviewVideo();
+    layoutPreviewDateText();
+  });
 }
 
 function bindPreviewResize() {
@@ -335,12 +535,12 @@ function drawDateText(ctx, frameOption, text) {
   ctx.textAlign = align || "center";
   ctx.textBaseline = "middle";
   ctx.lineJoin = "round";
-  ctx.lineWidth = strokeWidth ?? 3;
-  ctx.strokeStyle = strokeColor || "#333333";
+  ctx.lineWidth = strokeWidth ?? 0;
+  ctx.strokeStyle = strokeColor || "transparent";
   ctx.fillStyle = color || "#FFFFFF";
   ctx.font = `${fontWeight || "700"} ${fontSize || 42}px ${fontFamily || "sans-serif"}`;
 
-  if (strokeWidth && strokeWidth > 0) {
+  if ((strokeWidth || 0) > 0) {
     ctx.strokeText(text, x, y);
   }
 
@@ -348,76 +548,108 @@ function drawDateText(ctx, frameOption, text) {
   ctx.restore();
 }
 
+function renderLanguageSwitcher(t) {
+  return `
+    <div class="mb-4 flex justify-end gap-2">
+      <button type="button" data-lang="zh" class="rounded-full border px-3 py-1 text-xs transition ${
+        currentLanguage === "zh"
+          ? "border-black bg-black text-white"
+          : "border-neutral-300 bg-white text-neutral-700"
+      }">${t.langZh}</button>
+      <button type="button" data-lang="en" class="rounded-full border px-3 py-1 text-xs transition ${
+        currentLanguage === "en"
+          ? "border-black bg-black text-white"
+          : "border-neutral-300 bg-white text-neutral-700"
+      }">${t.langEn}</button>
+      <button type="button" data-lang="ja" class="rounded-full border px-3 py-1 text-xs transition ${
+        currentLanguage === "ja"
+          ? "border-black bg-black text-white"
+          : "border-neutral-300 bg-white text-neutral-700"
+      }">${t.langJa}</button>
+      <button type="button" data-lang="ko" class="rounded-full border px-3 py-1 text-xs transition ${
+        currentLanguage === "ko"
+          ? "border-black bg-black text-white"
+          : "border-neutral-300 bg-white text-neutral-700"
+      }">${t.langKo}</button>
+    </div>
+  `;
+}
+
 function render() {
   const app = document.querySelector("#app");
+  const t = TEXTS[currentLanguage];
+  const selectedOption = getSelectedFrameOption();
+  const translatedDates = getTranslatedDateOptions();
 
   if (currentScreen === "home") {
-    const selectedOption = getSelectedFrameOption();
-
     app.innerHTML = `
       <main class="min-h-screen bg-neutral-100 text-neutral-900">
         <section class="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-8">
           <div class="w-full rounded-3xl bg-white p-6 shadow-lg">
+            ${renderLanguageSwitcher(t)}
+
             <div class="mb-3 text-center">
-              <h1 class="text-2xl font-bold">拍照打卡框</h1>
+              <h1 class="text-2xl font-bold">${t.title}</h1>
             </div>
 
             <p class="mb-5 text-center text-sm text-neutral-500">
-              企鵝吃鯊魚工作室製作
+              ${t.studio}
             </p>
 
             <div class="mb-5">
               <div class="mb-2 flex items-center justify-between">
-                <h2 class="text-sm font-semibold text-neutral-900">選擇拍照框樣式</h2>
-                <span class="text-xs text-neutral-500">目前：${selectedOption.name}</span>
+                <h2 class="text-sm font-semibold text-neutral-900">${t.chooseFrame}</h2>
+                <span class="text-xs text-neutral-500">${t.currentStyle}：${t[selectedOption.nameKey]}</span>
               </div>
 
               <p class="mb-3 text-xs leading-5 text-neutral-500">
-                第一次開啟時，預覽圖可能需要加載十幾秒。
+                ${t.previewLoadingHint}
               </p>
 
               <div class="grid grid-cols-2 gap-3">
-                ${renderFrameCard(FRAME_OPTIONS.a)}
-                ${renderFrameCard(FRAME_OPTIONS.b)}
+                ${renderFrameCard(FRAME_OPTIONS.a, t)}
+                ${renderFrameCard(FRAME_OPTIONS.b, t)}
               </div>
             </div>
 
             <div class="mb-5">
               <div class="mb-2 flex items-center justify-between">
-                <h2 class="text-sm font-semibold text-neutral-900">選擇日期（可不選）</h2>
+                <h2 class="text-sm font-semibold text-neutral-900">${t.chooseDate}</h2>
                 <span class="text-xs text-neutral-500">
-                  ${selectedDateLabel || "不顯示"}
+                  ${selectedDateLabel || t.noDate}
                 </span>
               </div>
 
               <div class="flex gap-2 overflow-x-auto whitespace-nowrap pb-1">
-                ${DATE_OPTIONS.map(
-                  (option) => `
-                    <button
-                      type="button"
-                      data-date-select="${option.id}"
-                      data-date-value="${option.value}"
-                      class="rounded-full border px-3 py-2 text-sm transition shrink-0 ${
-                        selectedDateLabel === option.id
-                          ? "border-black bg-black text-white"
-                          : "border-neutral-300 bg-white text-neutral-700"
-                      }"
-                    >
-                      ${option.label}
-                    </button>
-                  `,
-                ).join("")}
+                ${translatedDates
+                  .map(
+                    (option) => `
+                      <button
+                        type="button"
+                        data-date-select="${option.id}"
+                        data-date-value="${option.value}"
+                        class="rounded-full border px-3 py-2 text-sm transition shrink-0 ${
+                          selectedDateLabel === option.id
+                            ? "border-black bg-black text-white"
+                            : "border-neutral-300 bg-white text-neutral-700"
+                        }"
+                      >
+                        ${option.label}
+                      </button>
+                    `,
+                  )
+                  .join("")}
               </div>
             </div>
 
             <div class="mb-6 rounded-2xl bg-neutral-50 p-5">
-              <h2 class="text-sm font-semibold text-neutral-900">使用方式</h2>
+              <h2 class="text-sm font-semibold text-neutral-900">${t.usage}</h2>
               <div class="mt-3 space-y-2 text-sm leading-6 text-neutral-600">
-                <p>1. 先選擇喜歡的拍照框樣式</p>
-                <p>2. 選擇是否顯示日期</p>
-                <p>3. 點擊「開始拍照」</p>
-                <p class="pl-4 text-xs text-neutral-500">（點擊後請允許使用相機功能）</p>
-                <p>4. 拍完後可儲存或分享圖片</p>
+                <p>${t.step1}</p>
+                <p>${t.step2}</p>
+                <p>${t.step3}</p>
+                <p class="pl-4 text-xs text-neutral-500">${t.step3Hint}</p>
+                <p>${t.step4}</p>
               </div>
             </div>
 
@@ -426,13 +658,13 @@ function render() {
                 id="start-camera-btn"
                 class="rounded-2xl bg-black px-4 py-3 text-sm font-medium text-white transition hover:opacity-90"
               >
-                開始拍照
+                ${t.startPhoto}
               </button>
             </div>
 
             <div class="mt-4 text-center text-xs leading-5 text-neutral-500">
-              <p>我們不會讀取、儲存或備份任何拍攝內容</p>
-              <p>拍完後請記得先儲存圖片</p>
+              <p>${t.noStore1}</p>
+              <p>${t.noStore2}</p>
             </div>
           </div>
         </section>
@@ -460,6 +692,15 @@ function render() {
       });
     });
 
+    document.querySelectorAll("[data-lang]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const lang = button.dataset.lang;
+        if (!lang) return;
+        currentLanguage = lang;
+        render();
+      });
+    });
+
     document.querySelectorAll("[data-preview-id]").forEach((img) => {
       const frameId = img.dataset.previewId;
 
@@ -478,8 +719,6 @@ function render() {
   }
 
   if (currentScreen === "camera") {
-    const frameOption = getSelectedFrameOption();
-
     app.innerHTML = `
       <main class="h-[100dvh] overflow-hidden bg-black text-white">
         <section class="mx-auto flex h-full max-w-md flex-col px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-[max(16px,env(safe-area-inset-top))]">
@@ -489,12 +728,12 @@ function render() {
               class="rounded-full bg-white/10 px-4 py-2 text-sm font-medium backdrop-blur disabled:opacity-50"
               ${isProcessingPhoto ? "disabled" : ""}
             >
-              返回
+              ${t.back}
             </button>
 
             <div class="text-center">
-              <h1 class="text-sm font-medium">拍照預覽</h1>
-              <p class="mt-1 text-xs text-white/60">${frameOption.name}・${frameOption.description}</p>
+              <h1 class="text-sm font-medium">${t.previewTitle}</h1>
+              <p class="mt-1 text-xs text-white/60">${t[selectedOption.nameKey]}・${t[selectedOption.descriptionKey]}</p>
             </div>
 
             <div class="w-[68px]"></div>
@@ -519,42 +758,43 @@ function render() {
 
               <img
                 id="frame-overlay"
-                src="${frameOption.frameSrc}"
+                src="${selectedOption.frameSrc}"
                 alt="拍照框"
                 class="pointer-events-none absolute inset-0 h-full w-full object-fill"
               />
 
               ${
-                selectedDate && frameOption.dateText?.enabled
+                selectedDate && selectedOption.dateText?.enabled
                   ? `
-      <div
-        id="date-preview-text"
-        class="pointer-events-none absolute inset-0"
-      >
-        <div
-          id="date-preview-label"
-          style="
-            position: absolute;
-            color: ${frameOption.dateText.color};
-            font-weight: ${frameOption.dateText.fontWeight};
-            font-family: ${frameOption.dateText.fontFamily};
-            text-align: ${frameOption.dateText.align};
-            white-space: nowrap;
-            line-height: 1;
-          "
-        >
-          ${selectedDate}
-        </div>
-      </div>
-    `
+                    <div
+                      id="date-preview-text"
+                      class="pointer-events-none absolute inset-0"
+                    >
+                      <div
+                        id="date-preview-label"
+                        style="
+                          position: absolute;
+                          color: ${selectedOption.dateText.color};
+                          font-weight: ${selectedOption.dateText.fontWeight};
+                          font-family: ${selectedOption.dateText.fontFamily};
+                          text-align: ${selectedOption.dateText.align};
+                          white-space: nowrap;
+                          line-height: 1;
+                        "
+                      >
+                        ${selectedDate}
+                      </div>
+                    </div>
+                  `
                   : ""
               }
+
               <div
                 id="camera-processing-overlay"
                 class="absolute inset-0 z-10 hidden flex-col items-center justify-center bg-black/55 backdrop-blur-sm"
               >
                 <div class="h-10 w-10 animate-spin rounded-full border-4 border-white/30 border-t-white"></div>
-                <p class="mt-4 text-sm font-medium text-white">處理中...</p>
+                <p class="mt-4 text-sm font-medium text-white">${t.processing}</p>
               </div>
             </div>
           </div>
@@ -566,7 +806,7 @@ function render() {
                 class="rounded-2xl bg-white/10 px-4 py-3 text-sm font-medium backdrop-blur disabled:opacity-50"
                 ${isProcessingPhoto ? "disabled" : ""}
               >
-                切換鏡頭
+                ${t.switchCamera}
               </button>
 
               <button
@@ -574,7 +814,7 @@ function render() {
                 class="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-black disabled:opacity-50"
                 ${isProcessingPhoto ? "disabled" : ""}
               >
-                ${isProcessingPhoto ? "處理中..." : "拍照"}
+                ${isProcessingPhoto ? t.processing : t.capture}
               </button>
             </div>
           </footer>
@@ -601,15 +841,13 @@ function render() {
   }
 
   if (currentScreen === "preview") {
-    const frameOption = getSelectedFrameOption();
-
     app.innerHTML = `
       <main class="h-[100dvh] overflow-hidden bg-neutral-950 text-white">
         <section class="mx-auto flex h-full max-w-md flex-col px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-[max(16px,env(safe-area-inset-top))]">
           <header class="mb-2 flex shrink-0 items-center justify-center py-2">
             <div class="text-center">
-              <h1 class="text-sm font-medium">預覽成品</h1>
-              <p class="mt-1 text-xs text-white/60">${frameOption.name}</p>
+              <h1 class="text-sm font-medium">${t.resultTitle}</h1>
+              <p class="mt-1 text-xs text-white/60">${t[selectedOption.nameKey]}</p>
             </div>
           </header>
 
@@ -629,19 +867,19 @@ function render() {
                 id="retake-btn"
                 class="rounded-2xl bg-white/10 px-4 py-3 text-sm font-medium backdrop-blur"
               >
-                重新拍照
+                ${t.retake}
               </button>
 
               <button
                 id="share-btn"
                 class="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-black"
               >
-                儲存 / 分享
+                ${t.saveShare}
               </button>
             </div>
 
             <p class="mt-3 text-center text-xs leading-5 text-white/60">
-              iPhone 可點「儲存 / 分享」後，選擇「儲存影像」。
+              ${t.iphoneHint}
             </p>
           </footer>
         </section>
@@ -657,7 +895,7 @@ function render() {
   }
 }
 
-function renderFrameCard(option) {
+function renderFrameCard(option, t) {
   const isSelected = selectedFrame === option.id;
   const isLoaded = previewLoaded[option.id];
 
@@ -677,12 +915,12 @@ function renderFrameCard(option) {
           class="${isLoaded ? "hidden" : "flex"} absolute inset-0 flex-col items-center justify-center bg-neutral-100"
         >
           <div class="h-8 w-8 animate-spin rounded-full border-4 border-neutral-300 border-t-neutral-500"></div>
-          <p class="mt-3 text-xs text-neutral-500">載入預覽圖中...</p>
+          <p class="mt-3 text-xs text-neutral-500">Loading...</p>
         </div>
 
         <img
           src="${option.previewSrc}"
-          alt="${option.name}"
+          alt="${t[option.nameKey]}"
           data-preview-image="${option.id}"
           data-preview-id="${option.id}"
           class="h-full w-full object-cover transition-opacity duration-300 ${
@@ -695,12 +933,12 @@ function renderFrameCard(option) {
 
       <div class="flex items-start justify-between p-3">
         <div>
-          <p class="text-sm font-semibold text-neutral-900">${option.name}</p>
-          <p class="mt-1 text-xs text-neutral-500">${option.description}</p>
+          <p class="text-sm font-semibold text-neutral-900">${t[option.nameKey]}</p>
+          <p class="mt-1 text-xs text-neutral-500">${t[option.descriptionKey]}</p>
         </div>
         ${
           isSelected
-            ? `<span class="rounded-full bg-black px-2 py-1 text-[10px] font-medium text-white">已選擇</span>`
+            ? `<span class="rounded-full bg-black px-2 py-1 text-[10px] font-medium text-white">✓</span>`
             : ""
         }
       </div>
@@ -744,7 +982,7 @@ async function setupHighQualityCamera(track) {
       await track.applyConstraints(constraints);
     }
   } catch (error) {
-    console.warn("無法套用高畫質約束，改用預設設定：", error);
+    console.warn("Unable to apply camera constraints:", error);
   }
 }
 
@@ -781,6 +1019,7 @@ async function openCameraScreen() {
 }
 
 async function startCamera() {
+  const t = TEXTS[currentLanguage];
   const video = document.querySelector("#camera-preview");
   if (!video) return;
 
@@ -816,8 +1055,8 @@ async function startCamera() {
     await video.play().catch(() => {});
     updatePreviewLayout();
   } catch (error) {
-    console.error("無法開啟相機：", error);
-    alert("無法開啟相機，請確認你已允許相機權限。");
+    console.error("Unable to access camera:", error);
+    alert(t.cameraError);
     isProcessingPhoto = false;
     hideProcessingOverlay();
   }
@@ -849,6 +1088,8 @@ async function switchCamera() {
 }
 
 async function capturePhoto() {
+  const t = TEXTS[currentLanguage];
+
   if (isProcessingPhoto) return;
 
   const video = document.querySelector("#camera-preview");
@@ -872,7 +1113,7 @@ async function capturePhoto() {
     if (!sourceWidth || !sourceHeight) {
       isProcessingPhoto = false;
       hideProcessingOverlay();
-      alert("相機畫面尚未準備完成，請稍後再試一次。");
+      alert(t.cameraNotReady);
       return;
     }
 
@@ -927,11 +1168,11 @@ async function capturePhoto() {
     currentScreen = "preview";
     render();
   } catch (error) {
-    console.error("拍照失敗：", error);
+    console.error("Capture failed:", error);
     isProcessingPhoto = false;
     hideProcessingOverlay();
     unbindPreviewResize();
-    alert("拍照失敗，請再試一次。");
+    alert(t.captureError);
   }
 }
 
@@ -967,7 +1208,7 @@ async function saveOrShareImage() {
 
     downloadImageFallback();
   } catch (error) {
-    console.error("分享失敗，改用下載方式：", error);
+    console.error("Share failed, fallback to download:", error);
     downloadImageFallback();
   }
 }
