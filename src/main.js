@@ -6,6 +6,7 @@ let facingMode = "environment";
 let capturedImage = null;
 let selectedFrame = "a";
 let selectedDate = "";
+let selectedDateLabel = "";
 let currentTrack = null;
 let isProcessingPhoto = false;
 
@@ -19,10 +20,10 @@ const OUTPUT_HEIGHT = 1920;
 const OUTPUT_RATIO = OUTPUT_WIDTH / OUTPUT_HEIGHT;
 
 const DATE_OPTIONS = [
-  { id: "", label: "不顯示" },
-  { id: "03.20", label: "03.20" },
-  { id: "03.21", label: "03.21" },
-  { id: "03.22", label: "03.22" },
+  { id: "", label: "不顯示", value: "" },
+  { id: "03.20", label: "03.20", value: "2026.03.20" },
+  { id: "03.21", label: "03.21", value: "2026.03.21" },
+  { id: "03.22", label: "03.22", value: "2026.03.22" },
 ];
 
 const FRAME_OPTIONS = {
@@ -34,8 +35,8 @@ const FRAME_OPTIONS = {
     frameSrc: `${import.meta.env.BASE_URL}frame-a.png`,
     dateText: {
       enabled: true,
-      x: 870,
-      y: 1780,
+      x: 875,
+      y: 1835,
       fontSize: 34,
       color: "#FFFFFF",
       strokeColor: "transparent",
@@ -54,8 +55,8 @@ const FRAME_OPTIONS = {
     frameSrc: `${import.meta.env.BASE_URL}frame-b.png`,
     dateText: {
       enabled: true,
-      x: 870,
-      y: 1780,
+      x: 875,
+      y: 1835,
       fontSize: 34,
       color: "#FFFFFF",
       strokeColor: "transparent",
@@ -385,17 +386,18 @@ function render() {
               <div class="mb-2 flex items-center justify-between">
                 <h2 class="text-sm font-semibold text-neutral-900">選擇日期（可不選）</h2>
                 <span class="text-xs text-neutral-500">
-                  ${selectedDate || "不顯示"}
+                  ${selectedDateLabel || "不顯示"}
                 </span>
               </div>
 
-              <div class="flex flex-wrap gap-2">
+              <div class="flex gap-2 overflow-x-auto whitespace-nowrap pb-1">
                 ${DATE_OPTIONS.map(
                   (option) => `
                     <button
                       type="button"
                       data-date-select="${option.id}"
-                      class="rounded-full border px-4 py-2 text-sm transition ${
+data-date-value="${option.value}"
+                      class="rounded-full border px-3 py-2 text-sm transition shrink-0 ${
                         selectedDate === option.id
                           ? "border-black bg-black text-white"
                           : "border-neutral-300 bg-white text-neutral-700"
@@ -452,7 +454,8 @@ function render() {
 
     document.querySelectorAll("[data-date-select]").forEach((button) => {
       button.addEventListener("click", () => {
-        selectedDate = button.dataset.dateSelect ?? "";
+        selectedDate = button.dataset.dateValue ?? "";
+        selectedDateLabel = button.dataset.dateSelect ?? "";
         render();
       });
     });
