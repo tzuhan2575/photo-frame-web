@@ -8,10 +8,14 @@ let selectedFrame = "a";
 let currentTrack = null;
 let imageCapture = null;
 let isProcessingPhoto = false;
+
 let previewLoaded = {
   a: false,
   b: false,
 };
+
+let previewFrameScale = 1;
+let previewFrameOffsetY = 0;
 
 const FRAME_OPTIONS = {
   a: {
@@ -30,8 +34,6 @@ const FRAME_OPTIONS = {
   },
 };
 
-const PREVIEW_FRAME_SCALE = 0.92;
-const PREVIEW_FRAME_OFFSET_Y = 0;
 const imagePreloadCache = new Map();
 
 function preloadImage(src) {
@@ -66,6 +68,50 @@ function getSelectedFrameOption() {
   return FRAME_OPTIONS[selectedFrame];
 }
 
+function updatePreviewFrameLayout() {
+  const wrapper = document.querySelector("#camera-frame-wrapper");
+  if (!wrapper) return;
+
+  const rect = wrapper.getBoundingClientRect();
+  const width = rect.width;
+  const height = rect.height;
+
+  if (!width || !height) return;
+
+  const shorterSide = Math.min(width, height);
+
+  let scale = 1;
+
+  if (shorterSide <= 320) {
+    scale = 0.98;
+  } else if (shorterSide <= 360) {
+    scale = 0.965;
+  } else if (shorterSide <= 390) {
+    scale = 0.95;
+  } else if (shorterSide <= 430) {
+    scale = 0.935;
+  } else {
+    scale = 0.92;
+  }
+
+  previewFrameScale = scale;
+  previewFrameOffsetY = 0;
+
+  const frameOverlay = document.querySelector("#frame-overlay");
+  if (frameOverlay) {
+    frameOverlay.style.transform = `translateY(${previewFrameOffsetY}px) scale(${previewFrameScale})`;
+  }
+}
+
+function bindPreviewFrameResize() {
+  window.removeEventListener("resize", updatePreviewFrameLayout);
+  window.addEventListener("resize", updatePreviewFrameLayout);
+}
+
+function unbindPreviewFrameResize() {
+  window.removeEventListener("resize", updatePreviewFrameLayout);
+}
+
 function markPreviewLoaded(frameId) {
   previewLoaded[frameId] = true;
 
@@ -92,6 +138,7 @@ function showProcessingOverlay() {
 
   if (overlay) {
     overlay.classList.remove("hidden");
+    overlay.classList.add("flex");
   }
 
   if (captureBtn) {
@@ -119,6 +166,7 @@ function hideProcessingOverlay() {
 
   if (overlay) {
     overlay.classList.add("hidden");
+    overlay.classList.remove("flex");
   }
 
   if (captureBtn) {
@@ -157,20 +205,20 @@ function render() {
             </p>
 
             <div class="mb-5">
-  <div class="mb-2 flex items-center justify-between">
-    <h2 class="text-sm font-semibold text-neutral-900">選擇拍照框樣式</h2>
-    <span class="text-xs text-neutral-500">目前：${selectedOption.name}</span>
-  </div>
+              <div class="mb-2 flex items-center justify-between">
+                <h2 class="text-sm font-semibold text-neutral-900">選擇拍照框樣式</h2>
+                <span class="text-xs text-neutral-500">目前：${selectedOption.name}</span>
+              </div>
 
-  <p class="mb-3 text-xs leading-5 text-neutral-500">
-    第一次開啟時，預覽圖可能需要加載十幾秒。
-  </p>
+              <p class="mb-3 text-xs leading-5 text-neutral-500">
+                第一次開啟時，預覽圖可能需要加載十幾秒。
+              </p>
 
-  <div class="grid grid-cols-2 gap-3">
-    ${renderFrameCard(FRAME_OPTIONS.a)}
-    ${renderFrameCard(FRAME_OPTIONS.b)}
-  </div>
-</div>
+              <div class="grid grid-cols-2 gap-3">
+                ${renderFrameCard(FRAME_OPTIONS.a)}
+                ${renderFrameCard(FRAME_OPTIONS.b)}
+              </div>
+            </div>
 
             <div class="mb-6 rounded-2xl bg-neutral-50 p-5">
               <h2 class="text-sm font-semibold text-neutral-900">使用方式</h2>
@@ -212,6 +260,7 @@ function render() {
         render();
       });
     });
+
     document.querySelectorAll("[data-preview-id]").forEach((img) => {
       const frameId = img.dataset.previewId;
 
@@ -238,7 +287,8 @@ function render() {
           <header class="flex shrink-0 items-center justify-between py-2">
             <button
               id="back-btn"
-              class="rounded-full bg-white/10 px-4 py-2 text-sm font-medium backdrop-blur"
+              class="rounded-full bg-white/10 px-4 py-2 text-sm font-medium backdrop-blur disabled:opacity-50"
+              ${isProcessingPhoto ? "disabled" : ""}
             >
               返回
             </button>
@@ -252,36 +302,36 @@ function render() {
           </header>
 
           <div class="flex min-h-0 flex-1 items-center py-3">
-            <div class="relative mx-auto aspect-[9/16] max-h-full w-full overflow-hidden rounded-3xl bg-neutral-900">
-  <video
-    id="camera-preview"
-    autoplay
-    playsinline
-    muted
-    class="h-full w-full object-cover"
-  ></video>
+            <div
+              id="camera-frame-wrapper"
+              class="relative mx-auto aspect-[9/16] max-h-full w-full overflow-hidden rounded-3xl bg-neutral-900"
+            >
+              <video
+                id="camera-preview"
+                autoplay
+                playsinline
+                muted
+                class="h-full w-full object-cover"
+              ></video>
 
-  <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
-  <img
-    id="frame-overlay"
-    src="${frameOption.frameSrc}"
-    alt="拍照框"
-    class="h-full w-full object-contain"
-    style="
-      transform: translateY(${PREVIEW_FRAME_OFFSET_Y}px) scale(${PREVIEW_FRAME_SCALE});
-      transform-origin: center;
-    "
-  />
-</div>
+              <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <img
+                  id="frame-overlay"
+                  src="${frameOption.frameSrc}"
+                  alt="拍照框"
+                  class="h-full w-full object-contain"
+                  style="transform: translateY(0px) scale(1); transform-origin: center;"
+                />
+              </div>
 
-  <div
-    id="camera-processing-overlay"
-    class="absolute inset-0 z-10 hidden flex-col items-center justify-center bg-black/55 backdrop-blur-sm"
-  >
-    <div class="h-10 w-10 animate-spin rounded-full border-4 border-white/30 border-t-white"></div>
-    <p class="mt-4 text-sm font-medium text-white">處理中...</p>
-  </div>
-</div>
+              <div
+                id="camera-processing-overlay"
+                class="absolute inset-0 z-10 hidden flex-col items-center justify-center bg-black/55 backdrop-blur-sm"
+              >
+                <div class="h-10 w-10 animate-spin rounded-full border-4 border-white/30 border-t-white"></div>
+                <p class="mt-4 text-sm font-medium text-white">處理中...</p>
+              </div>
+            </div>
           </div>
 
           <footer class="shrink-0 py-2">
@@ -318,6 +368,8 @@ function render() {
         .addEventListener("click", capturePhoto);
     }
 
+    updatePreviewFrameLayout();
+    bindPreviewFrameResize();
     startCamera();
   }
 
@@ -548,6 +600,7 @@ async function startCamera() {
     console.error("無法開啟相機：", error);
     alert("無法開啟相機，請確認你已允許相機權限。");
     isProcessingPhoto = false;
+    hideProcessingOverlay();
   }
 }
 
@@ -564,6 +617,7 @@ function stopCamera() {
 function goHome() {
   stopCamera();
   isProcessingPhoto = false;
+  unbindPreviewFrameResize();
   unlockPageScroll();
   resetScrollPosition();
   currentScreen = "home";
@@ -688,12 +742,14 @@ async function capturePhoto() {
 
     stopCamera();
     isProcessingPhoto = false;
+    unbindPreviewFrameResize();
     currentScreen = "preview";
     render();
   } catch (error) {
     console.error("拍照失敗：", error);
     isProcessingPhoto = false;
     hideProcessingOverlay();
+    unbindPreviewFrameResize();
     alert("拍照失敗，請再試一次。");
   }
 }
@@ -724,8 +780,7 @@ async function saveOrShareImage() {
     ) {
       await navigator.share({
         files: [file],
-        title: "活動拍照打卡框",
-        text: "我的拍照成品",
+        title: "拍照打卡框",
       });
       return;
     }
@@ -760,16 +815,6 @@ function dataUrlToFile(dataUrl, filename) {
   }
 
   return new File([bytes], filename, { type: mime });
-}
-
-function loadImage(src) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.decoding = "async";
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = src;
-  });
 }
 
 render();
