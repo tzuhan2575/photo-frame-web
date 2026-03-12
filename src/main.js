@@ -14,9 +14,6 @@ let previewLoaded = {
   b: false,
 };
 
-let previewFrameScale = 1;
-let previewFrameOffsetY = 0;
-
 const FRAME_OPTIONS = {
   a: {
     id: "a",
@@ -69,38 +66,29 @@ function getSelectedFrameOption() {
 }
 
 function updatePreviewFrameLayout() {
+  const stage = document.querySelector("#camera-preview-stage");
   const wrapper = document.querySelector("#camera-frame-wrapper");
-  if (!wrapper) return;
 
-  const rect = wrapper.getBoundingClientRect();
-  const width = rect.width;
-  const height = rect.height;
+  if (!stage || !wrapper) return;
 
-  if (!width || !height) return;
+  const stageRect = stage.getBoundingClientRect();
+  const availableWidth = stageRect.width;
+  const availableHeight = stageRect.height;
 
-  const shorterSide = Math.min(width, height);
+  if (!availableWidth || !availableHeight) return;
 
-  let scale = 1;
+  const targetRatio = 9 / 16;
 
-  if (shorterSide <= 320) {
-    scale = 0.98;
-  } else if (shorterSide <= 360) {
-    scale = 0.965;
-  } else if (shorterSide <= 390) {
-    scale = 0.95;
-  } else if (shorterSide <= 430) {
-    scale = 0.935;
-  } else {
-    scale = 0.92;
+  let frameWidth = availableWidth;
+  let frameHeight = frameWidth / targetRatio;
+
+  if (frameHeight > availableHeight) {
+    frameHeight = availableHeight;
+    frameWidth = frameHeight * targetRatio;
   }
 
-  previewFrameScale = scale;
-  previewFrameOffsetY = 0;
-
-  const frameOverlay = document.querySelector("#frame-overlay");
-  if (frameOverlay) {
-    frameOverlay.style.transform = `translateY(${previewFrameOffsetY}px) scale(${previewFrameScale})`;
-  }
+  wrapper.style.width = `${frameWidth}px`;
+  wrapper.style.height = `${frameHeight}px`;
 }
 
 function bindPreviewFrameResize() {
@@ -301,10 +289,14 @@ function render() {
             <div class="w-[68px]"></div>
           </header>
 
-          <div class="flex min-h-0 flex-1 items-center py-3">
+          <div
+            id="camera-preview-stage"
+            class="flex min-h-0 flex-1 items-center justify-center py-3"
+          >
             <div
               id="camera-frame-wrapper"
-              class="relative mx-auto aspect-[9/16] max-h-full w-full overflow-hidden rounded-3xl bg-neutral-900"
+              class="relative overflow-hidden rounded-3xl bg-neutral-900"
+              style="width: 100%; height: auto;"
             >
               <video
                 id="camera-preview"
@@ -314,15 +306,12 @@ function render() {
                 class="h-full w-full object-cover"
               ></video>
 
-              <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
-                <img
-                  id="frame-overlay"
-                  src="${frameOption.frameSrc}"
-                  alt="拍照框"
-                  class="h-full w-full object-contain"
-                  style="transform: translateY(0px) scale(1); transform-origin: center;"
-                />
-              </div>
+              <img
+                id="frame-overlay"
+                src="${frameOption.frameSrc}"
+                alt="拍照框"
+                class="pointer-events-none absolute inset-0 h-full w-full object-fill"
+              />
 
               <div
                 id="camera-processing-overlay"
@@ -368,9 +357,11 @@ function render() {
         .addEventListener("click", capturePhoto);
     }
 
-    updatePreviewFrameLayout();
-    bindPreviewFrameResize();
     startCamera();
+    requestAnimationFrame(() => {
+      updatePreviewFrameLayout();
+      bindPreviewFrameResize();
+    });
   }
 
   if (currentScreen === "preview") {
