@@ -65,50 +65,56 @@ function render() {
     const selectedOption = getSelectedFrameOption();
 
     app.innerHTML = `
-      <main class="min-h-screen bg-neutral-100 text-neutral-900">
-        <section class="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-8">
-          <div class="w-full rounded-3xl bg-white p-6 shadow-lg">
-            <div class="mb-5 text-center">
-              <h1 class="text-2xl font-bold">企鵝吃鯊魚工作室 - 拍照打卡框</h1>
-            </div>
-
-            <div class="mb-5">
-              <div class="mb-3 flex items-center justify-between">
-                <h2 class="text-sm font-semibold text-neutral-900">選擇拍照框樣式</h2>
-                <span class="text-xs text-neutral-500">目前：${selectedOption.name}</span>
-              </div>
-
-              <div class="grid grid-cols-2 gap-3">
-                ${renderFrameCard(FRAME_OPTIONS.a)}
-                ${renderFrameCard(FRAME_OPTIONS.b)}
-              </div>
-            </div>
-
-            <div class="mb-6 rounded-2xl bg-neutral-50 p-5">
-              <h2 class="text-sm font-semibold text-neutral-900">使用方式</h2>
-              <div class="mt-3 space-y-2 text-sm leading-6 text-neutral-600">
-                <p>1. 先選擇喜歡的拍照框樣式</p>
-                <p>2. 點擊「開始拍照」</p>
-                <p>3. 拍完後可儲存或分享圖片</p>
-              </div>
-            </div>
-
-            <div class="flex flex-col gap-3">
-              <button
-                id="start-camera-btn"
-                class="rounded-2xl bg-black px-4 py-3 text-sm font-medium text-white transition hover:opacity-90"
-              >
-                開始拍照
-              </button>
-            </div>
-
-            <p class="mt-4 text-center text-xs leading-5 text-neutral-500">
-              照片只會留在自己的手機裡，我們不會讀取、儲存或備份任何拍攝內容。拍完後請記得先儲存圖片。
-            </p>
+    <main class="min-h-screen bg-neutral-100 text-neutral-900">
+      <section class="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-8">
+        <div class="w-full rounded-3xl bg-white p-6 shadow-lg">
+          <div class="mb-3 text-center">
+            <h1 class="text-2xl font-bold">拍照打卡框</h1>
           </div>
-        </section>
-      </main>
-    `;
+
+          <p class="mb-5 text-center text-sm text-neutral-500">
+            企鵝吃鯊魚工作室製作
+          </p>
+
+          <div class="mb-5">
+            <div class="mb-3 flex items-center justify-between">
+              <h2 class="text-sm font-semibold text-neutral-900">選擇拍照框樣式</h2>
+              <span class="text-xs text-neutral-500">目前：${selectedOption.name}</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              ${renderFrameCard(FRAME_OPTIONS.a)}
+              ${renderFrameCard(FRAME_OPTIONS.b)}
+            </div>
+          </div>
+
+          <div class="mb-6 rounded-2xl bg-neutral-50 p-5">
+            <h2 class="text-sm font-semibold text-neutral-900">使用方式</h2>
+            <div class="mt-3 space-y-2 text-sm leading-6 text-neutral-600">
+              <p>1. 先選擇喜歡的拍照框樣式</p>
+              <p>2. 點擊「開始拍照」</p>
+              <p class="pl-4 text-xs text-neutral-500">（點擊後請允許使用相機功能）</p>
+              <p>3. 拍完後可儲存或分享圖片</p>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-3">
+            <button
+              id="start-camera-btn"
+              class="rounded-2xl bg-black px-4 py-3 text-sm font-medium text-white transition hover:opacity-90"
+            >
+              開始拍照
+            </button>
+          </div>
+
+          <div class="mt-4 text-center text-xs leading-5 text-neutral-500">
+            <p>我們不會讀取、儲存或備份任何拍攝內容</p>
+            <p>拍完後請記得先儲存圖片</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  `;
 
     document
       .querySelector("#start-camera-btn")
