@@ -35,8 +35,8 @@ const FRAME_OPTIONS = {
     frameSrc: `${import.meta.env.BASE_URL}frame-a.png`,
     dateText: {
       enabled: true,
-      x: 875,
-      y: 1835,
+      x: 930,
+      y: 1880,
       fontSize: 34,
       color: "#FFFFFF",
       strokeColor: "transparent",
@@ -55,8 +55,8 @@ const FRAME_OPTIONS = {
     frameSrc: `${import.meta.env.BASE_URL}frame-b.png`,
     dateText: {
       enabled: true,
-      x: 875,
-      y: 1835,
+      x: 930,
+      y: 1880,
       fontSize: 34,
       color: "#FFFFFF",
       strokeColor: "transparent",
@@ -396,9 +396,9 @@ function render() {
                     <button
                       type="button"
                       data-date-select="${option.id}"
-data-date-value="${option.value}"
+                      data-date-value="${option.value}"
                       class="rounded-full border px-3 py-2 text-sm transition shrink-0 ${
-                        selectedDate === option.id
+                        selectedDateLabel === option.id
                           ? "border-black bg-black text-white"
                           : "border-neutral-300 bg-white text-neutral-700"
                       }"
