@@ -5,6 +5,7 @@ let stream = null;
 let facingMode = "environment";
 let capturedImage = null;
 let selectedFrame = "a";
+let selectedDate = "";
 let currentTrack = null;
 let isProcessingPhoto = false;
 
@@ -17,6 +18,13 @@ const OUTPUT_WIDTH = 1080;
 const OUTPUT_HEIGHT = 1920;
 const OUTPUT_RATIO = OUTPUT_WIDTH / OUTPUT_HEIGHT;
 
+const DATE_OPTIONS = [
+  { id: "", label: "不顯示" },
+  { id: "3/20", label: "3/20" },
+  { id: "3/21", label: "3/21" },
+  { id: "3/22", label: "3/22" },
+];
+
 const FRAME_OPTIONS = {
   a: {
     id: "a",
@@ -24,6 +32,19 @@ const FRAME_OPTIONS = {
     description: "可愛版",
     previewSrc: `${import.meta.env.BASE_URL}preview-a.png`,
     frameSrc: `${import.meta.env.BASE_URL}frame-a.png`,
+    dateText: {
+      enabled: true,
+      x: 540,
+      y: 250,
+      fontSize: 42,
+      color: "#FFFFFF",
+      strokeColor: "#333333",
+      strokeWidth: 3,
+      align: "center",
+      fontWeight: "700",
+      fontFamily:
+        '"Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif',
+    },
   },
   b: {
     id: "b",
@@ -31,6 +52,19 @@ const FRAME_OPTIONS = {
     description: "簡約版",
     previewSrc: `${import.meta.env.BASE_URL}preview-b.png`,
     frameSrc: `${import.meta.env.BASE_URL}frame-b.png`,
+    dateText: {
+      enabled: true,
+      x: 540,
+      y: 250,
+      fontSize: 42,
+      color: "#FFFFFF",
+      strokeColor: "#333333",
+      strokeWidth: 3,
+      align: "center",
+      fontWeight: "700",
+      fontFamily:
+        '"Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif',
+    },
   },
 };
 
@@ -250,6 +284,39 @@ function unbindPreviewResize() {
   window.removeEventListener("resize", updatePreviewLayout);
 }
 
+function drawDateText(ctx, frameOption, text) {
+  if (!text) return;
+  if (!frameOption.dateText || !frameOption.dateText.enabled) return;
+
+  const {
+    x,
+    y,
+    fontSize,
+    color,
+    strokeColor,
+    strokeWidth,
+    align,
+    fontWeight,
+    fontFamily,
+  } = frameOption.dateText;
+
+  ctx.save();
+  ctx.textAlign = align || "center";
+  ctx.textBaseline = "middle";
+  ctx.lineJoin = "round";
+  ctx.lineWidth = strokeWidth ?? 3;
+  ctx.strokeStyle = strokeColor || "#333333";
+  ctx.fillStyle = color || "#FFFFFF";
+  ctx.font = `${fontWeight || "700"} ${fontSize || 42}px ${fontFamily || "sans-serif"}`;
+
+  if (strokeWidth && strokeWidth > 0) {
+    ctx.strokeText(text, x, y);
+  }
+
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+
 function render() {
   const app = document.querySelector("#app");
 
@@ -284,13 +351,41 @@ function render() {
               </div>
             </div>
 
+            <div class="mb-5">
+              <div class="mb-2 flex items-center justify-between">
+                <h2 class="text-sm font-semibold text-neutral-900">選擇日期（可不選）</h2>
+                <span class="text-xs text-neutral-500">
+                  ${selectedDate || "不顯示"}
+                </span>
+              </div>
+
+              <div class="flex flex-wrap gap-2">
+                ${DATE_OPTIONS.map(
+                  (option) => `
+                    <button
+                      type="button"
+                      data-date-select="${option.id}"
+                      class="rounded-full border px-4 py-2 text-sm transition ${
+                        selectedDate === option.id
+                          ? "border-black bg-black text-white"
+                          : "border-neutral-300 bg-white text-neutral-700"
+                      }"
+                    >
+                      ${option.label}
+                    </button>
+                  `,
+                ).join("")}
+              </div>
+            </div>
+
             <div class="mb-6 rounded-2xl bg-neutral-50 p-5">
               <h2 class="text-sm font-semibold text-neutral-900">使用方式</h2>
               <div class="mt-3 space-y-2 text-sm leading-6 text-neutral-600">
                 <p>1. 先選擇喜歡的拍照框樣式</p>
-                <p>2. 點擊「開始拍照」</p>
+                <p>2. 選擇是否顯示日期</p>
+                <p>3. 點擊「開始拍照」</p>
                 <p class="pl-4 text-xs text-neutral-500">（點擊後請允許使用相機功能）</p>
-                <p>3. 拍完後可儲存或分享圖片</p>
+                <p>4. 拍完後可儲存或分享圖片</p>
               </div>
             </div>
 
@@ -321,6 +416,13 @@ function render() {
         const frameId = button.dataset.frameSelect;
         if (!frameId) return;
         selectedFrame = frameId;
+        render();
+      });
+    });
+
+    document.querySelectorAll("[data-date-select]").forEach((button) => {
+      button.addEventListener("click", () => {
+        selectedDate = button.dataset.dateSelect ?? "";
         render();
       });
     });
@@ -388,6 +490,35 @@ function render() {
                 alt="拍照框"
                 class="pointer-events-none absolute inset-0 h-full w-full object-fill"
               />
+
+              <div
+                id="date-preview-text"
+                class="pointer-events-none absolute inset-0"
+              >
+                ${
+                  selectedDate && frameOption.dateText?.enabled
+                    ? `
+                      <div
+                        style="
+                          position: absolute;
+                          left: ${frameOption.dateText.x}px;
+                          top: ${frameOption.dateText.y}px;
+                          transform: translate(-50%, -50%);
+                          color: ${frameOption.dateText.color};
+                          font-size: ${frameOption.dateText.fontSize}px;
+                          font-weight: ${frameOption.dateText.fontWeight};
+                          font-family: ${frameOption.dateText.fontFamily};
+                          -webkit-text-stroke: ${frameOption.dateText.strokeWidth}px ${frameOption.dateText.strokeColor};
+                          text-align: ${frameOption.dateText.align};
+                          white-space: nowrap;
+                        "
+                      >
+                        ${selectedDate}
+                      </div>
+                    `
+                    : ""
+                }
+              </div>
 
               <div
                 id="camera-processing-overlay"
@@ -692,8 +823,7 @@ async function capturePhoto() {
   if (isProcessingPhoto) return;
 
   const video = document.querySelector("#camera-preview");
-  const wrapper = document.querySelector("#camera-frame-wrapper");
-  if (!video || !wrapper) return;
+  if (!video) return;
 
   isProcessingPhoto = true;
   showProcessingOverlay();
@@ -754,10 +884,11 @@ async function capturePhoto() {
       );
     }
 
-    const cachedFrameImg = await preloadImage(
-      getSelectedFrameOption().frameSrc,
-    );
+    const frameOption = getSelectedFrameOption();
+    const cachedFrameImg = await preloadImage(frameOption.frameSrc);
     ctx.drawImage(cachedFrameImg, 0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT);
+
+    drawDateText(ctx, frameOption, selectedDate);
 
     capturedImage = canvas.toDataURL("image/png");
 
