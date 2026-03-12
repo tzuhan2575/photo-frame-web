@@ -8,24 +8,6 @@ let selectedFrame = "a";
 let currentTrack = null;
 let imageCapture = null;
 
-let cameraControls = {
-  zoomSupported: false,
-  zoomMin: 1,
-  zoomMax: 1,
-  zoomStep: 0.1,
-  zoomValue: 1,
-
-  focusModeSupported: false,
-  focusModes: [],
-  focusModeValue: "",
-
-  focusDistanceSupported: false,
-  focusDistanceMin: 0,
-  focusDistanceMax: 0,
-  focusDistanceStep: 0.1,
-  focusDistanceValue: 0,
-};
-
 const FRAME_OPTIONS = {
   a: {
     id: "a",
@@ -129,136 +111,62 @@ function render() {
     const frameOption = getSelectedFrameOption();
 
     app.innerHTML = `
-    <main class="h-[100dvh] overflow-hidden bg-black text-white">
-      <section class="mx-auto flex h-full max-w-md flex-col px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-[max(16px,env(safe-area-inset-top))]">
-        <header class="flex shrink-0 items-center justify-between py-2">
-          <button
-            id="back-btn"
-            class="rounded-full bg-white/10 px-4 py-2 text-sm font-medium backdrop-blur"
-          >
-            返回
-          </button>
-
-          <div class="text-center">
-            <h1 class="text-sm font-medium">拍照預覽</h1>
-            <p class="mt-1 text-xs text-white/60">${frameOption.name}・${frameOption.description}</p>
-          </div>
-
-          <div class="w-[68px]"></div>
-        </header>
-
-        <div class="flex min-h-0 flex-1 items-center py-3">
-          <div class="relative mx-auto aspect-[9/16] max-h-full w-full overflow-hidden rounded-3xl bg-neutral-900">
-            <video
-              id="camera-preview"
-              autoplay
-              playsinline
-              muted
-              class="h-full w-full object-cover"
-            ></video>
-
-            <img
-              src="${frameOption.frameSrc}"
-              alt="拍照框"
-              class="pointer-events-none absolute inset-0 h-full w-full object-cover"
-            />
-          </div>
-        </div>
-
-        <div class="shrink-0 space-y-3 py-2">
-          ${
-            cameraControls.zoomSupported
-              ? `
-                <div class="rounded-2xl bg-white/10 p-3 backdrop-blur">
-                  <div class="mb-2 flex items-center justify-between">
-                    <label for="zoom-range" class="text-sm font-medium">縮放</label>
-                    <span class="text-xs text-white/70">${cameraControls.zoomValue.toFixed(1)}x</span>
-                  </div>
-                  <input
-                    id="zoom-range"
-                    type="range"
-                    min="${cameraControls.zoomMin}"
-                    max="${cameraControls.zoomMax}"
-                    step="${cameraControls.zoomStep}"
-                    value="${cameraControls.zoomValue}"
-                    class="w-full"
-                  />
-                </div>
-              `
-              : ""
-          }
-
-          ${
-            cameraControls.focusModeSupported
-              ? `
-                <div class="rounded-2xl bg-white/10 p-3 backdrop-blur">
-                  <label for="focus-mode-select" class="mb-2 block text-sm font-medium">聚焦模式</label>
-                  <select
-                    id="focus-mode-select"
-                    class="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white"
-                  >
-                    ${cameraControls.focusModes
-                      .map(
-                        (mode) => `
-                          <option value="${mode}" ${
-                            mode === cameraControls.focusModeValue
-                              ? "selected"
-                              : ""
-                          }>
-                            ${mode}
-                          </option>
-                        `,
-                      )
-                      .join("")}
-                  </select>
-                </div>
-              `
-              : ""
-          }
-
-          ${
-            cameraControls.focusDistanceSupported
-              ? `
-                <div class="rounded-2xl bg-white/10 p-3 backdrop-blur">
-                  <div class="mb-2 flex items-center justify-between">
-                    <label for="focus-distance-range" class="text-sm font-medium">手動聚焦距離</label>
-                    <span class="text-xs text-white/70">${Number(cameraControls.focusDistanceValue).toFixed(2)}</span>
-                  </div>
-                  <input
-                    id="focus-distance-range"
-                    type="range"
-                    min="${cameraControls.focusDistanceMin}"
-                    max="${cameraControls.focusDistanceMax}"
-                    step="${cameraControls.focusDistanceStep}"
-                    value="${cameraControls.focusDistanceValue}"
-                    class="w-full"
-                  />
-                </div>
-              `
-              : ""
-          }
-        </div>
-
-        <footer class="shrink-0 py-2">
-          <div class="grid grid-cols-2 gap-3">
+      <main class="h-[100dvh] overflow-hidden bg-black text-white">
+        <section class="mx-auto flex h-full max-w-md flex-col px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-[max(16px,env(safe-area-inset-top))]">
+          <header class="flex shrink-0 items-center justify-between py-2">
             <button
-              id="switch-camera-btn"
-              class="rounded-2xl bg-white/10 px-4 py-3 text-sm font-medium backdrop-blur"
+              id="back-btn"
+              class="rounded-full bg-white/10 px-4 py-2 text-sm font-medium backdrop-blur"
             >
-              切換鏡頭
+              返回
             </button>
 
-            <button
-              id="capture-btn"
-              class="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-black"
-            >
-              拍照
-            </button>
+            <div class="text-center">
+              <h1 class="text-sm font-medium">拍照預覽</h1>
+              <p class="mt-1 text-xs text-white/60">${frameOption.name}・${frameOption.description}</p>
+            </div>
+
+            <div class="w-[68px]"></div>
+          </header>
+
+          <div class="flex min-h-0 flex-1 items-center py-3">
+            <div class="relative mx-auto aspect-[9/16] max-h-full w-full overflow-hidden rounded-3xl bg-neutral-900">
+              <video
+                id="camera-preview"
+                autoplay
+                playsinline
+                muted
+                class="h-full w-full object-cover"
+              ></video>
+
+              <img
+                src="${frameOption.frameSrc}"
+                alt="拍照框"
+                class="pointer-events-none absolute inset-0 h-full w-full object-cover"
+              />
+            </div>
           </div>
-        </footer>
-      </section>
-    </main>
-  `;
+
+          <footer class="shrink-0 py-2">
+            <div class="grid grid-cols-2 gap-3">
+              <button
+                id="switch-camera-btn"
+                class="rounded-2xl bg-white/10 px-4 py-3 text-sm font-medium backdrop-blur"
+              >
+                切換鏡頭
+              </button>
+
+              <button
+                id="capture-btn"
+                class="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-black"
+              >
+                拍照
+              </button>
+            </div>
+          </footer>
+        </section>
+      </main>
+    `;
 
     document.querySelector("#back-btn").addEventListener("click", goHome);
     document
@@ -267,43 +175,6 @@ function render() {
     document
       .querySelector("#capture-btn")
       .addEventListener("click", capturePhoto);
-
-    const zoomRange = document.querySelector("#zoom-range");
-    if (zoomRange) {
-      zoomRange.addEventListener("input", async (event) => {
-        const value = event.target.value;
-        await applyZoom(value);
-
-        const valueLabel = zoomRange
-          .closest(".rounded-2xl")
-          ?.querySelector(".text-xs");
-        if (valueLabel) {
-          valueLabel.textContent = `${Number(value).toFixed(1)}x`;
-        }
-      });
-    }
-
-    const focusModeSelect = document.querySelector("#focus-mode-select");
-    if (focusModeSelect) {
-      focusModeSelect.addEventListener("change", async (event) => {
-        await applyFocusMode(event.target.value);
-      });
-    }
-
-    const focusDistanceRange = document.querySelector("#focus-distance-range");
-    if (focusDistanceRange) {
-      focusDistanceRange.addEventListener("input", async (event) => {
-        const value = event.target.value;
-        await applyFocusDistance(value);
-
-        const valueLabel = focusDistanceRange
-          .closest(".rounded-2xl")
-          ?.querySelector(".text-xs");
-        if (valueLabel) {
-          valueLabel.textContent = Number(value).toFixed(2);
-        }
-      });
-    }
 
     startCamera();
   }
@@ -412,10 +283,9 @@ function renderFrameCard(option) {
     </button>
   `;
 }
+
 async function setupHighQualityCamera(track) {
   if (!track) return;
-
-  resetCameraControls();
 
   try {
     const capabilities =
@@ -438,103 +308,20 @@ async function setupHighQualityCamera(track) {
       constraints.aspectRatio = { ideal: 9 / 16 };
     }
 
-    if (capabilities.zoom) {
-      cameraControls.zoomSupported = true;
-      cameraControls.zoomMin = capabilities.zoom.min ?? 1;
-      cameraControls.zoomMax = capabilities.zoom.max ?? 1;
-      cameraControls.zoomStep = capabilities.zoom.step ?? 0.1;
-      cameraControls.zoomValue = capabilities.zoom.min ?? 1;
-    }
-
     if (capabilities.focusMode && Array.isArray(capabilities.focusMode)) {
-      const modes = capabilities.focusMode.filter(Boolean);
-      if (modes.length > 0) {
-        cameraControls.focusModeSupported = true;
-        cameraControls.focusModes = modes;
-
-        if (modes.includes("continuous")) {
-          cameraControls.focusModeValue = "continuous";
-          constraints.focusMode = "continuous";
-        } else {
-          cameraControls.focusModeValue = modes[0];
-          constraints.focusMode = modes[0];
-        }
+      if (capabilities.focusMode.includes("continuous")) {
+        constraints.focusMode = "continuous";
+      } else if (capabilities.focusMode.includes("single-shot")) {
+        constraints.focusMode = "single-shot";
       }
-    }
-
-    if (capabilities.focusDistance) {
-      cameraControls.focusDistanceSupported = true;
-      cameraControls.focusDistanceMin = capabilities.focusDistance.min ?? 0;
-      cameraControls.focusDistanceMax = capabilities.focusDistance.max ?? 0;
-      cameraControls.focusDistanceStep = capabilities.focusDistance.step ?? 0.1;
-      cameraControls.focusDistanceValue = capabilities.focusDistance.min ?? 0;
     }
 
     if (Object.keys(constraints).length > 0) {
       await track.applyConstraints(constraints);
     }
   } catch (error) {
-    console.warn("無法套用高畫質 / 相機能力設定，改用預設設定：", error);
+    console.warn("無法套用高畫質約束，改用預設設定：", error);
   }
-}
-
-async function applyZoom(value) {
-  if (!currentTrack || !cameraControls.zoomSupported) return;
-
-  try {
-    await currentTrack.applyConstraints({
-      advanced: [{ zoom: Number(value) }],
-    });
-    cameraControls.zoomValue = Number(value);
-  } catch (error) {
-    console.warn("套用縮放失敗：", error);
-  }
-}
-
-async function applyFocusMode(value) {
-  if (!currentTrack || !cameraControls.focusModeSupported) return;
-
-  try {
-    await currentTrack.applyConstraints({
-      advanced: [{ focusMode: value }],
-    });
-    cameraControls.focusModeValue = value;
-  } catch (error) {
-    console.warn("套用聚焦模式失敗：", error);
-  }
-}
-
-async function applyFocusDistance(value) {
-  if (!currentTrack || !cameraControls.focusDistanceSupported) return;
-
-  try {
-    await currentTrack.applyConstraints({
-      advanced: [{ focusDistance: Number(value) }],
-    });
-    cameraControls.focusDistanceValue = Number(value);
-  } catch (error) {
-    console.warn("套用聚焦距離失敗：", error);
-  }
-}
-
-function resetCameraControls() {
-  cameraControls = {
-    zoomSupported: false,
-    zoomMin: 1,
-    zoomMax: 1,
-    zoomStep: 0.1,
-    zoomValue: 1,
-
-    focusModeSupported: false,
-    focusModes: [],
-    focusModeValue: "",
-
-    focusDistanceSupported: false,
-    focusDistanceMin: 0,
-    focusDistanceMax: 0,
-    focusDistanceStep: 0.1,
-    focusDistanceValue: 0,
-  };
 }
 
 function resetScrollPosition() {
@@ -620,7 +407,6 @@ function stopCamera() {
   stream = null;
   currentTrack = null;
   imageCapture = null;
-  resetCameraControls();
 }
 
 function goHome() {
