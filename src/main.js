@@ -20,9 +20,9 @@ const OUTPUT_RATIO = OUTPUT_WIDTH / OUTPUT_HEIGHT;
 
 const DATE_OPTIONS = [
   { id: "", label: "不顯示" },
-  { id: "2026.03.20", label: "2026.03.20" },
-  { id: "2026.03.21", label: "2026.03.21" },
-  { id: "2026.03.22", label: "2026.03.22" },
+  { id: "03.20", label: "03.20" },
+  { id: "03.21", label: "03.21" },
+  { id: "03.22", label: "03.22" },
 ];
 
 const FRAME_OPTIONS = {
@@ -34,12 +34,12 @@ const FRAME_OPTIONS = {
     frameSrc: `${import.meta.env.BASE_URL}frame-a.png`,
     dateText: {
       enabled: true,
-      x: 860,
-      y: 1670,
+      x: 870,
+      y: 1780,
       fontSize: 34,
       color: "#FFFFFF",
-      strokeColor: "#FF6B8A",
-      strokeWidth: 4,
+      strokeColor: "transparent",
+      strokeWidth: 0,
       align: "center",
       fontWeight: "700",
       fontFamily:
@@ -54,12 +54,12 @@ const FRAME_OPTIONS = {
     frameSrc: `${import.meta.env.BASE_URL}frame-b.png`,
     dateText: {
       enabled: true,
-      x: 860,
-      y: 1670,
+      x: 870,
+      y: 1780,
       fontSize: 34,
       color: "#FFFFFF",
-      strokeColor: "#FF6B8A",
-      strokeWidth: 4,
+      strokeColor: "transparent",
+      strokeWidth: 0,
       align: "center",
       fontWeight: "700",
       fontFamily:
@@ -298,7 +298,11 @@ function layoutPreviewDateText() {
   label.style.top = `${top}px`;
   label.style.transform = "translate(-50%, -50%)";
   label.style.fontSize = `${fontSize}px`;
-  label.style.webkitTextStroke = `${strokeWidth}px ${frameOption.dateText.strokeColor}`;
+  if ((frameOption.dateText.strokeWidth || 0) > 0) {
+    label.style.webkitTextStroke = `${strokeWidth}px ${frameOption.dateText.strokeColor}`;
+  } else {
+    label.style.webkitTextStroke = "0px transparent";
+  }
 }
 
 function bindPreviewResize() {
