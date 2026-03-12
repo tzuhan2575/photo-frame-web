@@ -8,6 +8,10 @@ let selectedFrame = "a";
 let currentTrack = null;
 let imageCapture = null;
 let isProcessingPhoto = false;
+let previewLoaded = {
+  a: false,
+  b: false,
+};
 
 const FRAME_OPTIONS = {
   a: {
@@ -60,6 +64,78 @@ function getSelectedFrameOption() {
   return FRAME_OPTIONS[selectedFrame];
 }
 
+function markPreviewLoaded(frameId) {
+  previewLoaded[frameId] = true;
+
+  const skeleton = document.querySelector(
+    `[data-preview-skeleton="${frameId}"]`,
+  );
+  const image = document.querySelector(`[data-preview-image="${frameId}"]`);
+
+  if (skeleton) {
+    skeleton.classList.add("hidden");
+  }
+
+  if (image) {
+    image.classList.remove("opacity-0");
+    image.classList.add("opacity-100");
+  }
+}
+
+function showProcessingOverlay() {
+  const overlay = document.querySelector("#camera-processing-overlay");
+  const captureBtn = document.querySelector("#capture-btn");
+  const switchBtn = document.querySelector("#switch-camera-btn");
+  const backBtn = document.querySelector("#back-btn");
+
+  if (overlay) {
+    overlay.classList.remove("hidden");
+  }
+
+  if (captureBtn) {
+    captureBtn.disabled = true;
+    captureBtn.textContent = "處理中...";
+    captureBtn.classList.add("opacity-50");
+  }
+
+  if (switchBtn) {
+    switchBtn.disabled = true;
+    switchBtn.classList.add("opacity-50");
+  }
+
+  if (backBtn) {
+    backBtn.disabled = true;
+    backBtn.classList.add("opacity-50");
+  }
+}
+
+function hideProcessingOverlay() {
+  const overlay = document.querySelector("#camera-processing-overlay");
+  const captureBtn = document.querySelector("#capture-btn");
+  const switchBtn = document.querySelector("#switch-camera-btn");
+  const backBtn = document.querySelector("#back-btn");
+
+  if (overlay) {
+    overlay.classList.add("hidden");
+  }
+
+  if (captureBtn) {
+    captureBtn.disabled = false;
+    captureBtn.textContent = "拍照";
+    captureBtn.classList.remove("opacity-50");
+  }
+
+  if (switchBtn) {
+    switchBtn.disabled = false;
+    switchBtn.classList.remove("opacity-50");
+  }
+
+  if (backBtn) {
+    backBtn.disabled = false;
+    backBtn.classList.remove("opacity-50");
+  }
+}
+
 function render() {
   const app = document.querySelector("#app");
 
@@ -79,16 +155,20 @@ function render() {
             </p>
 
             <div class="mb-5">
-              <div class="mb-3 flex items-center justify-between">
-                <h2 class="text-sm font-semibold text-neutral-900">選擇拍照框樣式</h2>
-                <span class="text-xs text-neutral-500">目前：${selectedOption.name}</span>
-              </div>
+  <div class="mb-2 flex items-center justify-between">
+    <h2 class="text-sm font-semibold text-neutral-900">選擇拍照框樣式</h2>
+    <span class="text-xs text-neutral-500">目前：${selectedOption.name}</span>
+  </div>
 
-              <div class="grid grid-cols-2 gap-3">
-                ${renderFrameCard(FRAME_OPTIONS.a)}
-                ${renderFrameCard(FRAME_OPTIONS.b)}
-              </div>
-            </div>
+  <p class="mb-3 text-xs leading-5 text-neutral-500">
+    第一次開啟時，預覽圖可能需要加載十幾秒。
+  </p>
+
+  <div class="grid grid-cols-2 gap-3">
+    ${renderFrameCard(FRAME_OPTIONS.a)}
+    ${renderFrameCard(FRAME_OPTIONS.b)}
+  </div>
+</div>
 
             <div class="mb-6 rounded-2xl bg-neutral-50 p-5">
               <h2 class="text-sm font-semibold text-neutral-900">使用方式</h2>
@@ -130,6 +210,21 @@ function render() {
         render();
       });
     });
+    document.querySelectorAll("[data-preview-id]").forEach((img) => {
+      const frameId = img.dataset.previewId;
+
+      if (img.complete) {
+        markPreviewLoaded(frameId);
+      } else {
+        img.addEventListener(
+          "load",
+          () => {
+            markPreviewLoaded(frameId);
+          },
+          { once: true },
+        );
+      }
+    });
   }
 
   if (currentScreen === "camera") {
@@ -156,32 +251,29 @@ function render() {
 
           <div class="flex min-h-0 flex-1 items-center py-3">
             <div class="relative mx-auto aspect-[9/16] max-h-full w-full overflow-hidden rounded-3xl bg-neutral-900">
-              <video
-                id="camera-preview"
-                autoplay
-                playsinline
-                muted
-                class="h-full w-full object-cover"
-              ></video>
+  <video
+    id="camera-preview"
+    autoplay
+    playsinline
+    muted
+    class="h-full w-full object-cover"
+  ></video>
 
-              <img
-                id="frame-overlay"
-                src="${frameOption.frameSrc}"
-                alt="拍照框"
-                class="pointer-events-none absolute inset-0 h-full w-full object-cover"
-              />
+  <img
+    id="frame-overlay"
+    src="${frameOption.frameSrc}"
+    alt="拍照框"
+    class="pointer-events-none absolute inset-0 h-full w-full object-cover"
+  />
 
-              ${
-                isProcessingPhoto
-                  ? `
-                    <div class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/55 backdrop-blur-sm">
-                      <div class="h-10 w-10 animate-spin rounded-full border-4 border-white/30 border-t-white"></div>
-                      <p class="mt-4 text-sm font-medium text-white">處理中...</p>
-                    </div>
-                  `
-                  : ""
-              }
-            </div>
+  <div
+    id="camera-processing-overlay"
+    class="absolute inset-0 z-10 hidden flex-col items-center justify-center bg-black/55 backdrop-blur-sm"
+  >
+    <div class="h-10 w-10 animate-spin rounded-full border-4 border-white/30 border-t-white"></div>
+    <p class="mt-4 text-sm font-medium text-white">處理中...</p>
+  </div>
+</div>
           </div>
 
           <footer class="shrink-0 py-2">
@@ -280,6 +372,7 @@ function render() {
 
 function renderFrameCard(option) {
   const isSelected = selectedFrame === option.id;
+  const isLoaded = previewLoaded[option.id];
 
   return `
     <button
@@ -291,11 +384,23 @@ function renderFrameCard(option) {
           : "border-neutral-200 bg-white"
       }"
     >
-      <div class="aspect-[9/16] w-full overflow-hidden bg-neutral-100">
+      <div class="relative aspect-[9/16] w-full overflow-hidden bg-neutral-100">
+        <div
+          data-preview-skeleton="${option.id}"
+          class="${isLoaded ? "hidden" : "flex"} absolute inset-0 flex-col items-center justify-center bg-neutral-100"
+        >
+          <div class="h-8 w-8 animate-spin rounded-full border-4 border-neutral-300 border-t-neutral-500"></div>
+          <p class="mt-3 text-xs text-neutral-500">載入預覽圖中...</p>
+        </div>
+
         <img
           src="${option.previewSrc}"
           alt="${option.name}"
-          class="h-full w-full object-cover"
+          data-preview-image="${option.id}"
+          data-preview-id="${option.id}"
+          class="h-full w-full object-cover transition-opacity duration-300 ${
+            isLoaded ? "opacity-100" : "opacity-0"
+          }"
           loading="eager"
           decoding="async"
         />
@@ -470,7 +575,7 @@ async function capturePhoto() {
   if (!video) return;
 
   isProcessingPhoto = true;
-  render();
+  showProcessingOverlay();
 
   await new Promise((resolve) => requestAnimationFrame(resolve));
 
@@ -506,7 +611,7 @@ async function capturePhoto() {
 
       if (!fallbackWidth || !fallbackHeight) {
         isProcessingPhoto = false;
-        render();
+        hideProcessingOverlay();
         alert("相機畫面尚未準備完成，請稍後再試一次。");
         return;
       }
@@ -579,10 +684,8 @@ async function capturePhoto() {
     render();
   } catch (error) {
     console.error("拍照失敗：", error);
-    stopCamera();
     isProcessingPhoto = false;
-    currentScreen = "camera";
-    render();
+    hideProcessingOverlay();
     alert("拍照失敗，請再試一次。");
   }
 }
@@ -662,4 +765,6 @@ function loadImage(src) {
 }
 
 render();
-preloadAllAssetsInBackground();
+requestAnimationFrame(() => {
+  preloadAllAssetsInBackground();
+});
