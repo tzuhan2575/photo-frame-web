@@ -6,13 +6,16 @@ let facingMode = "environment";
 let capturedImage = null;
 let selectedFrame = "a";
 let currentTrack = null;
-let imageCapture = null;
 let isProcessingPhoto = false;
 
 let previewLoaded = {
   a: false,
   b: false,
 };
+
+const OUTPUT_WIDTH = 1080;
+const OUTPUT_HEIGHT = 1920;
+const OUTPUT_RATIO = OUTPUT_WIDTH / OUTPUT_HEIGHT;
 
 const FRAME_OPTIONS = {
   a: {
@@ -63,41 +66,6 @@ function preloadAllAssetsInBackground() {
 
 function getSelectedFrameOption() {
   return FRAME_OPTIONS[selectedFrame];
-}
-
-function updatePreviewFrameLayout() {
-  const stage = document.querySelector("#camera-preview-stage");
-  const wrapper = document.querySelector("#camera-frame-wrapper");
-
-  if (!stage || !wrapper) return;
-
-  const stageRect = stage.getBoundingClientRect();
-  const availableWidth = stageRect.width;
-  const availableHeight = stageRect.height;
-
-  if (!availableWidth || !availableHeight) return;
-
-  const targetRatio = 9 / 16;
-
-  let frameWidth = availableWidth;
-  let frameHeight = frameWidth / targetRatio;
-
-  if (frameHeight > availableHeight) {
-    frameHeight = availableHeight;
-    frameWidth = frameHeight * targetRatio;
-  }
-
-  wrapper.style.width = `${frameWidth}px`;
-  wrapper.style.height = `${frameHeight}px`;
-}
-
-function bindPreviewFrameResize() {
-  window.removeEventListener("resize", updatePreviewFrameLayout);
-  window.addEventListener("resize", updatePreviewFrameLayout);
-}
-
-function unbindPreviewFrameResize() {
-  window.removeEventListener("resize", updatePreviewFrameLayout);
 }
 
 function markPreviewLoaded(frameId) {
@@ -172,6 +140,114 @@ function hideProcessingOverlay() {
     backBtn.disabled = false;
     backBtn.classList.remove("opacity-50");
   }
+}
+
+function getCoverCrop(sourceWidth, sourceHeight, targetWidth, targetHeight) {
+  const sourceRatio = sourceWidth / sourceHeight;
+  const targetRatio = targetWidth / targetHeight;
+
+  let cropWidth = sourceWidth;
+  let cropHeight = sourceHeight;
+  let cropX = 0;
+  let cropY = 0;
+
+  if (sourceRatio > targetRatio) {
+    cropWidth = sourceHeight * targetRatio;
+    cropX = (sourceWidth - cropWidth) / 2;
+  } else {
+    cropHeight = sourceWidth / targetRatio;
+    cropY = (sourceHeight - cropHeight) / 2;
+  }
+
+  return {
+    cropX,
+    cropY,
+    cropWidth,
+    cropHeight,
+  };
+}
+
+function layoutPreviewFrame() {
+  const stage = document.querySelector("#camera-preview-stage");
+  const wrapper = document.querySelector("#camera-frame-wrapper");
+
+  if (!stage || !wrapper) return;
+
+  const stageRect = stage.getBoundingClientRect();
+  const availableWidth = stageRect.width;
+  const availableHeight = stageRect.height;
+
+  if (!availableWidth || !availableHeight) return;
+
+  let frameWidth = availableWidth;
+  let frameHeight = frameWidth / OUTPUT_RATIO;
+
+  if (frameHeight > availableHeight) {
+    frameHeight = availableHeight;
+    frameWidth = frameHeight * OUTPUT_RATIO;
+  }
+
+  wrapper.style.width = `${frameWidth}px`;
+  wrapper.style.height = `${frameHeight}px`;
+}
+
+function layoutPreviewVideo() {
+  const wrapper = document.querySelector("#camera-frame-wrapper");
+  const video = document.querySelector("#camera-preview");
+
+  if (!wrapper || !video) return;
+  if (!video.videoWidth || !video.videoHeight) return;
+
+  const wrapperRect = wrapper.getBoundingClientRect();
+  const targetWidth = wrapperRect.width;
+  const targetHeight = wrapperRect.height;
+
+  if (!targetWidth || !targetHeight) return;
+
+  const sourceWidth = video.videoWidth;
+  const sourceHeight = video.videoHeight;
+
+  const { cropX, cropY, cropWidth, cropHeight } = getCoverCrop(
+    sourceWidth,
+    sourceHeight,
+    targetWidth,
+    targetHeight,
+  );
+
+  const scale = targetWidth / cropWidth;
+  const displayWidth = sourceWidth * scale;
+  const displayHeight = sourceHeight * scale;
+
+  const offsetX = -cropX * scale;
+  const offsetY = -cropY * scale;
+
+  video.style.width = `${displayWidth}px`;
+  video.style.height = `${displayHeight}px`;
+  video.style.maxWidth = "none";
+  video.style.maxHeight = "none";
+  video.style.transformOrigin = "top left";
+
+  if (facingMode === "user") {
+    video.style.transform = `translate(${offsetX + displayWidth}px, ${offsetY}px) scaleX(-1)`;
+  } else {
+    video.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+  }
+}
+
+function updatePreviewLayout() {
+  layoutPreviewFrame();
+  requestAnimationFrame(() => {
+    layoutPreviewVideo();
+  });
+}
+
+function bindPreviewResize() {
+  window.removeEventListener("resize", updatePreviewLayout);
+  window.addEventListener("resize", updatePreviewLayout);
+}
+
+function unbindPreviewResize() {
+  window.removeEventListener("resize", updatePreviewLayout);
 }
 
 function render() {
@@ -303,7 +379,7 @@ function render() {
                 autoplay
                 playsinline
                 muted
-                class="h-full w-full object-cover"
+                class="absolute top-0 left-0"
               ></video>
 
               <img
@@ -359,8 +435,8 @@ function render() {
 
     startCamera();
     requestAnimationFrame(() => {
-      updatePreviewFrameLayout();
-      bindPreviewFrameResize();
+      updatePreviewLayout();
+      bindPreviewResize();
     });
   }
 
@@ -493,7 +569,7 @@ async function setupHighQualityCamera(track) {
     }
 
     if (capabilities.aspectRatio) {
-      constraints.aspectRatio = { ideal: 9 / 16 };
+      constraints.aspectRatio = { ideal: OUTPUT_RATIO };
     }
 
     if (capabilities.focusMode && Array.isArray(capabilities.focusMode)) {
@@ -569,24 +645,16 @@ async function startCamera() {
 
     if (currentTrack) {
       await setupHighQualityCamera(currentTrack);
-
-      if ("ImageCapture" in window) {
-        try {
-          imageCapture = new ImageCapture(currentTrack);
-        } catch (error) {
-          console.warn(
-            "ImageCapture 初始化失敗，將退回 video frame 擷取：",
-            error,
-          );
-          imageCapture = null;
-        }
-      } else {
-        imageCapture = null;
-      }
     }
 
     video.srcObject = stream;
+
+    video.onloadedmetadata = () => {
+      updatePreviewLayout();
+    };
+
     await video.play().catch(() => {});
+    updatePreviewLayout();
   } catch (error) {
     console.error("無法開啟相機：", error);
     alert("無法開啟相機，請確認你已允許相機權限。");
@@ -602,13 +670,12 @@ function stopCamera() {
 
   stream = null;
   currentTrack = null;
-  imageCapture = null;
 }
 
 function goHome() {
   stopCamera();
   isProcessingPhoto = false;
-  unbindPreviewFrameResize();
+  unbindPreviewResize();
   unlockPageScroll();
   resetScrollPosition();
   currentScreen = "home";
@@ -625,122 +692,85 @@ async function capturePhoto() {
   if (isProcessingPhoto) return;
 
   const video = document.querySelector("#camera-preview");
-  if (!video) return;
+  const wrapper = document.querySelector("#camera-frame-wrapper");
+  if (!video || !wrapper) return;
 
   isProcessingPhoto = true;
   showProcessingOverlay();
 
   await new Promise((resolve) => requestAnimationFrame(resolve));
 
-  const outputWidth = 1080;
-  const outputHeight = 1920;
-
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
 
-  canvas.width = outputWidth;
-  canvas.height = outputHeight;
+  canvas.width = OUTPUT_WIDTH;
+  canvas.height = OUTPUT_HEIGHT;
 
   try {
-    let sourceImage = null;
-    let sourceWidth = 0;
-    let sourceHeight = 0;
+    const sourceWidth = video.videoWidth;
+    const sourceHeight = video.videoHeight;
 
-    if (imageCapture && typeof imageCapture.takePhoto === "function") {
-      try {
-        const blob = await imageCapture.takePhoto();
-        const bitmap = await createImageBitmap(blob);
-        sourceImage = bitmap;
-        sourceWidth = bitmap.width;
-        sourceHeight = bitmap.height;
-      } catch (error) {
-        console.warn("takePhoto 失敗，改用 video frame：", error);
-      }
+    if (!sourceWidth || !sourceHeight) {
+      isProcessingPhoto = false;
+      hideProcessingOverlay();
+      alert("相機畫面尚未準備完成，請稍後再試一次。");
+      return;
     }
 
-    if (!sourceImage) {
-      const fallbackWidth = video.videoWidth;
-      const fallbackHeight = video.videoHeight;
-
-      if (!fallbackWidth || !fallbackHeight) {
-        isProcessingPhoto = false;
-        hideProcessingOverlay();
-        alert("相機畫面尚未準備完成，請稍後再試一次。");
-        return;
-      }
-
-      sourceImage = video;
-      sourceWidth = fallbackWidth;
-      sourceHeight = fallbackHeight;
-    }
-
-    const sourceRatio = sourceWidth / sourceHeight;
-    const outputRatio = outputWidth / outputHeight;
-
-    let cropWidth = sourceWidth;
-    let cropHeight = sourceHeight;
-    let cropX = 0;
-    let cropY = 0;
-
-    if (sourceRatio > outputRatio) {
-      cropWidth = sourceHeight * outputRatio;
-      cropX = (sourceWidth - cropWidth) / 2;
-    } else {
-      cropHeight = sourceWidth / outputRatio;
-      cropY = (sourceHeight - cropHeight) / 2;
-    }
+    const { cropX, cropY, cropWidth, cropHeight } = getCoverCrop(
+      sourceWidth,
+      sourceHeight,
+      OUTPUT_WIDTH,
+      OUTPUT_HEIGHT,
+    );
 
     if (facingMode === "user") {
       ctx.save();
-      ctx.translate(outputWidth, 0);
+      ctx.translate(OUTPUT_WIDTH, 0);
       ctx.scale(-1, 1);
       ctx.drawImage(
-        sourceImage,
+        video,
         cropX,
         cropY,
         cropWidth,
         cropHeight,
         0,
         0,
-        outputWidth,
-        outputHeight,
+        OUTPUT_WIDTH,
+        OUTPUT_HEIGHT,
       );
       ctx.restore();
     } else {
       ctx.drawImage(
-        sourceImage,
+        video,
         cropX,
         cropY,
         cropWidth,
         cropHeight,
         0,
         0,
-        outputWidth,
-        outputHeight,
+        OUTPUT_WIDTH,
+        OUTPUT_HEIGHT,
       );
     }
 
     const cachedFrameImg = await preloadImage(
       getSelectedFrameOption().frameSrc,
     );
-    ctx.drawImage(cachedFrameImg, 0, 0, outputWidth, outputHeight);
+    ctx.drawImage(cachedFrameImg, 0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT);
 
     capturedImage = canvas.toDataURL("image/png");
 
-    if (sourceImage && typeof sourceImage.close === "function") {
-      sourceImage.close();
-    }
-
     stopCamera();
     isProcessingPhoto = false;
-    unbindPreviewFrameResize();
+    unbindPreviewResize();
     currentScreen = "preview";
     render();
   } catch (error) {
     console.error("拍照失敗：", error);
     isProcessingPhoto = false;
     hideProcessingOverlay();
-    unbindPreviewFrameResize();
+    unbindPreviewResize();
     alert("拍照失敗，請再試一次。");
   }
 }
