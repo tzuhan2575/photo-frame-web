@@ -7,6 +7,7 @@ let capturedImage = null;
 let selectedFrame = "a";
 let currentTrack = null;
 let imageCapture = null;
+let isProcessingPhoto = false;
 
 const FRAME_OPTIONS = {
   a: {
@@ -28,7 +29,7 @@ const FRAME_OPTIONS = {
 const imagePreloadCache = new Map();
 
 function preloadImage(src) {
-  if (!src) return Promise.resolve();
+  if (!src) return Promise.resolve(null);
 
   if (imagePreloadCache.has(src)) {
     return imagePreloadCache.get(src);
@@ -36,6 +37,7 @@ function preloadImage(src) {
 
   const promise = new Promise((resolve, reject) => {
     const img = new Image();
+    img.decoding = "async";
     img.onload = () => resolve(img);
     img.onerror = reject;
     img.src = src;
@@ -45,13 +47,13 @@ function preloadImage(src) {
   return promise;
 }
 
-async function preloadAllAssets() {
+function preloadAllAssetsInBackground() {
   const sources = Object.values(FRAME_OPTIONS).flatMap((option) => [
     option.previewSrc,
     option.frameSrc,
   ]);
 
-  await Promise.allSettled(sources.map(preloadImage));
+  Promise.allSettled(sources.map(preloadImage)).catch(() => {});
 }
 
 function getSelectedFrameOption() {
@@ -65,56 +67,56 @@ function render() {
     const selectedOption = getSelectedFrameOption();
 
     app.innerHTML = `
-    <main class="min-h-screen bg-neutral-100 text-neutral-900">
-      <section class="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-8">
-        <div class="w-full rounded-3xl bg-white p-6 shadow-lg">
-          <div class="mb-3 text-center">
-            <h1 class="text-2xl font-bold">拍照打卡框</h1>
-          </div>
-
-          <p class="mb-5 text-center text-sm text-neutral-500">
-            企鵝吃鯊魚工作室製作
-          </p>
-
-          <div class="mb-5">
-            <div class="mb-3 flex items-center justify-between">
-              <h2 class="text-sm font-semibold text-neutral-900">選擇拍照框樣式</h2>
-              <span class="text-xs text-neutral-500">目前：${selectedOption.name}</span>
+      <main class="min-h-screen bg-neutral-100 text-neutral-900">
+        <section class="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-8">
+          <div class="w-full rounded-3xl bg-white p-6 shadow-lg">
+            <div class="mb-3 text-center">
+              <h1 class="text-2xl font-bold">拍照打卡框</h1>
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
-              ${renderFrameCard(FRAME_OPTIONS.a)}
-              ${renderFrameCard(FRAME_OPTIONS.b)}
+            <p class="mb-5 text-center text-sm text-neutral-500">
+              企鵝吃鯊魚工作室製作
+            </p>
+
+            <div class="mb-5">
+              <div class="mb-3 flex items-center justify-between">
+                <h2 class="text-sm font-semibold text-neutral-900">選擇拍照框樣式</h2>
+                <span class="text-xs text-neutral-500">目前：${selectedOption.name}</span>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                ${renderFrameCard(FRAME_OPTIONS.a)}
+                ${renderFrameCard(FRAME_OPTIONS.b)}
+              </div>
+            </div>
+
+            <div class="mb-6 rounded-2xl bg-neutral-50 p-5">
+              <h2 class="text-sm font-semibold text-neutral-900">使用方式</h2>
+              <div class="mt-3 space-y-2 text-sm leading-6 text-neutral-600">
+                <p>1. 先選擇喜歡的拍照框樣式</p>
+                <p>2. 點擊「開始拍照」</p>
+                <p class="pl-4 text-xs text-neutral-500">（點擊後請允許使用相機功能）</p>
+                <p>3. 拍完後可儲存或分享圖片</p>
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-3">
+              <button
+                id="start-camera-btn"
+                class="rounded-2xl bg-black px-4 py-3 text-sm font-medium text-white transition hover:opacity-90"
+              >
+                開始拍照
+              </button>
+            </div>
+
+            <div class="mt-4 text-center text-xs leading-5 text-neutral-500">
+              <p>我們不會讀取、儲存或備份任何拍攝內容</p>
+              <p>拍完後請記得先儲存圖片</p>
             </div>
           </div>
-
-          <div class="mb-6 rounded-2xl bg-neutral-50 p-5">
-            <h2 class="text-sm font-semibold text-neutral-900">使用方式</h2>
-            <div class="mt-3 space-y-2 text-sm leading-6 text-neutral-600">
-              <p>1. 先選擇喜歡的拍照框樣式</p>
-              <p>2. 點擊「開始拍照」</p>
-              <p class="pl-4 text-xs text-neutral-500">（點擊後請允許使用相機功能）</p>
-              <p>3. 拍完後可儲存或分享圖片</p>
-            </div>
-          </div>
-
-          <div class="flex flex-col gap-3">
-            <button
-              id="start-camera-btn"
-              class="rounded-2xl bg-black px-4 py-3 text-sm font-medium text-white transition hover:opacity-90"
-            >
-              開始拍照
-            </button>
-          </div>
-
-          <div class="mt-4 text-center text-xs leading-5 text-neutral-500">
-            <p>我們不會讀取、儲存或備份任何拍攝內容</p>
-            <p>拍完後請記得先儲存圖片</p>
-          </div>
-        </div>
-      </section>
-    </main>
-  `;
+        </section>
+      </main>
+    `;
 
     document
       .querySelector("#start-camera-btn")
@@ -163,10 +165,22 @@ function render() {
               ></video>
 
               <img
+                id="frame-overlay"
                 src="${frameOption.frameSrc}"
                 alt="拍照框"
                 class="pointer-events-none absolute inset-0 h-full w-full object-cover"
               />
+
+              ${
+                isProcessingPhoto
+                  ? `
+                    <div class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/55 backdrop-blur-sm">
+                      <div class="h-10 w-10 animate-spin rounded-full border-4 border-white/30 border-t-white"></div>
+                      <p class="mt-4 text-sm font-medium text-white">處理中...</p>
+                    </div>
+                  `
+                  : ""
+              }
             </div>
           </div>
 
@@ -174,16 +188,18 @@ function render() {
             <div class="grid grid-cols-2 gap-3">
               <button
                 id="switch-camera-btn"
-                class="rounded-2xl bg-white/10 px-4 py-3 text-sm font-medium backdrop-blur"
+                class="rounded-2xl bg-white/10 px-4 py-3 text-sm font-medium backdrop-blur disabled:opacity-50"
+                ${isProcessingPhoto ? "disabled" : ""}
               >
                 切換鏡頭
               </button>
 
               <button
                 id="capture-btn"
-                class="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-black"
+                class="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-black disabled:opacity-50"
+                ${isProcessingPhoto ? "disabled" : ""}
               >
-                拍照
+                ${isProcessingPhoto ? "處理中..." : "拍照"}
               </button>
             </div>
           </footer>
@@ -192,12 +208,15 @@ function render() {
     `;
 
     document.querySelector("#back-btn").addEventListener("click", goHome);
-    document
-      .querySelector("#switch-camera-btn")
-      .addEventListener("click", switchCamera);
-    document
-      .querySelector("#capture-btn")
-      .addEventListener("click", capturePhoto);
+
+    if (!isProcessingPhoto) {
+      document
+        .querySelector("#switch-camera-btn")
+        .addEventListener("click", switchCamera);
+      document
+        .querySelector("#capture-btn")
+        .addEventListener("click", capturePhoto);
+    }
 
     startCamera();
   }
@@ -208,20 +227,11 @@ function render() {
     app.innerHTML = `
       <main class="h-[100dvh] overflow-hidden bg-neutral-950 text-white">
         <section class="mx-auto flex h-full max-w-md flex-col px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-[max(16px,env(safe-area-inset-top))]">
-          <header class="mb-2 flex shrink-0 items-center justify-between py-2">
-            <button
-              id="retake-btn-top"
-              class="rounded-full bg-white/10 px-4 py-2 text-sm font-medium backdrop-blur"
-            >
-              重拍
-            </button>
-
+          <header class="mb-2 flex shrink-0 items-center justify-center py-2">
             <div class="text-center">
               <h1 class="text-sm font-medium">預覽成品</h1>
               <p class="mt-1 text-xs text-white/60">${frameOption.name}</p>
             </div>
-
-            <div class="w-[68px]"></div>
           </header>
 
           <div class="flex min-h-0 flex-1 items-center py-3">
@@ -260,9 +270,6 @@ function render() {
     `;
 
     document
-      .querySelector("#retake-btn-top")
-      .addEventListener("click", reopenCamera);
-    document
       .querySelector("#retake-btn")
       .addEventListener("click", reopenCamera);
     document
@@ -289,6 +296,8 @@ function renderFrameCard(option) {
           src="${option.previewSrc}"
           alt="${option.name}"
           class="h-full w-full object-cover"
+          loading="eager"
+          decoding="async"
         />
       </div>
 
@@ -383,6 +392,9 @@ async function startCamera() {
   const video = document.querySelector("#camera-preview");
   if (!video) return;
 
+  const frameOption = getSelectedFrameOption();
+  preloadImage(frameOption.frameSrc).catch(() => {});
+
   try {
     if (stream) {
       stopCamera();
@@ -418,11 +430,11 @@ async function startCamera() {
     }
 
     video.srcObject = stream;
-
     await video.play().catch(() => {});
   } catch (error) {
     console.error("無法開啟相機：", error);
     alert("無法開啟相機，請確認你已允許相機權限。");
+    isProcessingPhoto = false;
   }
 }
 
@@ -438,6 +450,7 @@ function stopCamera() {
 
 function goHome() {
   stopCamera();
+  isProcessingPhoto = false;
   unlockPageScroll();
   resetScrollPosition();
   currentScreen = "home";
@@ -451,8 +464,15 @@ async function switchCamera() {
 }
 
 async function capturePhoto() {
+  if (isProcessingPhoto) return;
+
   const video = document.querySelector("#camera-preview");
   if (!video) return;
+
+  isProcessingPhoto = true;
+  render();
+
+  await new Promise((resolve) => requestAnimationFrame(resolve));
 
   const outputWidth = 1080;
   const outputHeight = 1920;
@@ -485,6 +505,8 @@ async function capturePhoto() {
       const fallbackHeight = video.videoHeight;
 
       if (!fallbackWidth || !fallbackHeight) {
+        isProcessingPhoto = false;
+        render();
         alert("相機畫面尚未準備完成，請稍後再試一次。");
         return;
       }
@@ -540,8 +562,10 @@ async function capturePhoto() {
       );
     }
 
-    const frameImg = await loadImage(getSelectedFrameOption().frameSrc);
-    ctx.drawImage(frameImg, 0, 0, outputWidth, outputHeight);
+    const cachedFrameImg = await preloadImage(
+      getSelectedFrameOption().frameSrc,
+    );
+    ctx.drawImage(cachedFrameImg, 0, 0, outputWidth, outputHeight);
 
     capturedImage = canvas.toDataURL("image/png");
 
@@ -550,17 +574,27 @@ async function capturePhoto() {
     }
 
     stopCamera();
+    isProcessingPhoto = false;
     currentScreen = "preview";
     render();
   } catch (error) {
     console.error("拍照失敗：", error);
+    stopCamera();
+    isProcessingPhoto = false;
+    currentScreen = "camera";
+    render();
     alert("拍照失敗，請再試一次。");
   }
 }
 
-function reopenCamera() {
+async function reopenCamera() {
   resetScrollPosition();
   lockPageScroll();
+
+  const selectedOption = getSelectedFrameOption();
+  await preloadImage(selectedOption.frameSrc);
+
+  isProcessingPhoto = false;
   currentScreen = "camera";
   render();
   resetScrollPosition();
@@ -620,13 +654,12 @@ function dataUrlToFile(dataUrl, filename) {
 function loadImage(src) {
   return new Promise((resolve, reject) => {
     const img = new Image();
+    img.decoding = "async";
     img.onload = () => resolve(img);
     img.onerror = reject;
     img.src = src;
   });
 }
 
-(async function initApp() {
-  await preloadAllAssets();
-  render();
-})();
+render();
+preloadAllAssetsInBackground();
