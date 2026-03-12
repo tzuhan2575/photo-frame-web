@@ -550,7 +550,7 @@ function drawDateText(ctx, frameOption, text) {
 
 function renderLanguageSwitcher(t) {
   return `
-    <div class="mb-4 flex justify-end gap-2">
+    <div class="mb-5 flex justify-center gap-2">
       <button type="button" data-lang="zh" class="rounded-full border px-3 py-1 text-xs transition ${
         currentLanguage === "zh"
           ? "border-black bg-black text-white"
@@ -586,15 +586,15 @@ function render() {
       <main class="min-h-screen bg-neutral-100 text-neutral-900">
         <section class="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-8">
           <div class="w-full rounded-3xl bg-white p-6 shadow-lg">
-            ${renderLanguageSwitcher(t)}
-
             <div class="mb-3 text-center">
-              <h1 class="text-2xl font-bold">${t.title}</h1>
-            </div>
+  <h1 class="text-2xl font-bold">${t.title}</h1>
+</div>
 
-            <p class="mb-5 text-center text-sm text-neutral-500">
-              ${t.studio}
-            </p>
+<p class="mb-3 text-center text-sm text-neutral-500">
+  ${t.studio}
+</p>
+
+${renderLanguageSwitcher(t)}
 
             <div class="mb-5">
               <div class="mb-2 flex items-center justify-between">
