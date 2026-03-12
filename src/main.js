@@ -5,6 +5,8 @@ let stream = null;
 let facingMode = "environment";
 let capturedImage = null;
 let selectedFrame = "a";
+let currentTrack = null;
+let imageCapture = null;
 
 const FRAME_OPTIONS = {
   a: {
@@ -281,6 +283,46 @@ function renderFrameCard(option) {
     </button>
   `;
 }
+async function setupHighQualityCamera(track) {
+  if (!track) return;
+
+  try {
+    const capabilities =
+      typeof track.getCapabilities === "function"
+        ? track.getCapabilities()
+        : {};
+
+    const constraints = {};
+
+    if (capabilities.width && capabilities.height) {
+      constraints.width = {
+        ideal: Math.min(capabilities.width.max ?? 1920, 2560),
+      };
+      constraints.height = {
+        ideal: Math.min(capabilities.height.max ?? 1440, 2560),
+      };
+    }
+
+    if (capabilities.aspectRatio) {
+      constraints.aspectRatio = { ideal: 9 / 16 };
+    }
+
+    if (capabilities.focusMode && Array.isArray(capabilities.focusMode)) {
+      if (capabilities.focusMode.includes("continuous")) {
+        constraints.focusMode = "continuous";
+      } else if (capabilities.focusMode.includes("single-shot")) {
+        constraints.focusMode = "single-shot";
+      }
+    }
+
+    if (Object.keys(constraints).length > 0) {
+      await track.applyConstraints(constraints);
+    }
+  } catch (error) {
+    console.warn("無法套用高畫質約束，改用預設設定：", error);
+  }
+}
+
 function resetScrollPosition() {
   window.scrollTo(0, 0);
   document.documentElement.scrollTop = 0;
@@ -321,11 +363,35 @@ async function startCamera() {
     stream = await navigator.mediaDevices.getUserMedia({
       video: {
         facingMode,
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
       },
       audio: false,
     });
 
+    currentTrack = stream.getVideoTracks()[0] ?? null;
+
+    if (currentTrack) {
+      await setupHighQualityCamera(currentTrack);
+
+      if ("ImageCapture" in window) {
+        try {
+          imageCapture = new ImageCapture(currentTrack);
+        } catch (error) {
+          console.warn(
+            "ImageCapture 初始化失敗，將退回 video frame 擷取：",
+            error,
+          );
+          imageCapture = null;
+        }
+      } else {
+        imageCapture = null;
+      }
+    }
+
     video.srcObject = stream;
+
+    await video.play().catch(() => {});
   } catch (error) {
     console.error("無法開啟相機：", error);
     alert("無法開啟相機，請確認你已允許相機權限。");
@@ -333,10 +399,13 @@ async function startCamera() {
 }
 
 function stopCamera() {
-  if (!stream) return;
+  if (stream) {
+    stream.getTracks().forEach((track) => track.stop());
+  }
 
-  stream.getTracks().forEach((track) => track.stop());
   stream = null;
+  currentTrack = null;
+  imageCapture = null;
 }
 
 function goHome() {
@@ -357,14 +426,6 @@ async function capturePhoto() {
   const video = document.querySelector("#camera-preview");
   if (!video) return;
 
-  const sourceWidth = video.videoWidth;
-  const sourceHeight = video.videoHeight;
-
-  if (!sourceWidth || !sourceHeight) {
-    alert("相機畫面尚未準備完成，請稍後再試一次。");
-    return;
-  }
-
   const outputWidth = 1080;
   const outputHeight = 1920;
 
@@ -374,60 +435,99 @@ async function capturePhoto() {
   canvas.width = outputWidth;
   canvas.height = outputHeight;
 
-  const sourceRatio = sourceWidth / sourceHeight;
-  const outputRatio = outputWidth / outputHeight;
+  try {
+    let sourceImage = null;
+    let sourceWidth = 0;
+    let sourceHeight = 0;
 
-  let cropWidth = sourceWidth;
-  let cropHeight = sourceHeight;
-  let cropX = 0;
-  let cropY = 0;
+    if (imageCapture && typeof imageCapture.takePhoto === "function") {
+      try {
+        const blob = await imageCapture.takePhoto();
+        const bitmap = await createImageBitmap(blob);
+        sourceImage = bitmap;
+        sourceWidth = bitmap.width;
+        sourceHeight = bitmap.height;
+      } catch (error) {
+        console.warn("takePhoto 失敗，改用 video frame：", error);
+      }
+    }
 
-  if (sourceRatio > outputRatio) {
-    cropWidth = sourceHeight * outputRatio;
-    cropX = (sourceWidth - cropWidth) / 2;
-  } else {
-    cropHeight = sourceWidth / outputRatio;
-    cropY = (sourceHeight - cropHeight) / 2;
+    if (!sourceImage) {
+      const fallbackWidth = video.videoWidth;
+      const fallbackHeight = video.videoHeight;
+
+      if (!fallbackWidth || !fallbackHeight) {
+        alert("相機畫面尚未準備完成，請稍後再試一次。");
+        return;
+      }
+
+      sourceImage = video;
+      sourceWidth = fallbackWidth;
+      sourceHeight = fallbackHeight;
+    }
+
+    const sourceRatio = sourceWidth / sourceHeight;
+    const outputRatio = outputWidth / outputHeight;
+
+    let cropWidth = sourceWidth;
+    let cropHeight = sourceHeight;
+    let cropX = 0;
+    let cropY = 0;
+
+    if (sourceRatio > outputRatio) {
+      cropWidth = sourceHeight * outputRatio;
+      cropX = (sourceWidth - cropWidth) / 2;
+    } else {
+      cropHeight = sourceWidth / outputRatio;
+      cropY = (sourceHeight - cropHeight) / 2;
+    }
+
+    if (facingMode === "user") {
+      ctx.save();
+      ctx.translate(outputWidth, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(
+        sourceImage,
+        cropX,
+        cropY,
+        cropWidth,
+        cropHeight,
+        0,
+        0,
+        outputWidth,
+        outputHeight,
+      );
+      ctx.restore();
+    } else {
+      ctx.drawImage(
+        sourceImage,
+        cropX,
+        cropY,
+        cropWidth,
+        cropHeight,
+        0,
+        0,
+        outputWidth,
+        outputHeight,
+      );
+    }
+
+    const frameImg = await loadImage(getSelectedFrameOption().frameSrc);
+    ctx.drawImage(frameImg, 0, 0, outputWidth, outputHeight);
+
+    capturedImage = canvas.toDataURL("image/png");
+
+    if (sourceImage && typeof sourceImage.close === "function") {
+      sourceImage.close();
+    }
+
+    stopCamera();
+    currentScreen = "preview";
+    render();
+  } catch (error) {
+    console.error("拍照失敗：", error);
+    alert("拍照失敗，請再試一次。");
   }
-
-  if (facingMode === "user") {
-    ctx.save();
-    ctx.translate(outputWidth, 0);
-    ctx.scale(-1, 1);
-    ctx.drawImage(
-      video,
-      cropX,
-      cropY,
-      cropWidth,
-      cropHeight,
-      0,
-      0,
-      outputWidth,
-      outputHeight,
-    );
-    ctx.restore();
-  } else {
-    ctx.drawImage(
-      video,
-      cropX,
-      cropY,
-      cropWidth,
-      cropHeight,
-      0,
-      0,
-      outputWidth,
-      outputHeight,
-    );
-  }
-
-  const frameImg = await loadImage(getSelectedFrameOption().frameSrc);
-  ctx.drawImage(frameImg, 0, 0, outputWidth, outputHeight);
-
-  capturedImage = canvas.toDataURL("image/png");
-
-  stopCamera();
-  currentScreen = "preview";
-  render();
 }
 
 function reopenCamera() {
