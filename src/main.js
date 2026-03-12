@@ -25,6 +25,35 @@ const FRAME_OPTIONS = {
   },
 };
 
+const imagePreloadCache = new Map();
+
+function preloadImage(src) {
+  if (!src) return Promise.resolve();
+
+  if (imagePreloadCache.has(src)) {
+    return imagePreloadCache.get(src);
+  }
+
+  const promise = new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+
+  imagePreloadCache.set(src, promise);
+  return promise;
+}
+
+async function preloadAllAssets() {
+  const sources = Object.values(FRAME_OPTIONS).flatMap((option) => [
+    option.previewSrc,
+    option.frameSrc,
+  ]);
+
+  await Promise.allSettled(sources.map(preloadImage));
+}
+
 function getSelectedFrameOption() {
   return FRAME_OPTIONS[selectedFrame];
 }
@@ -347,6 +376,10 @@ function unlockPageScroll() {
 async function openCameraScreen() {
   resetScrollPosition();
   lockPageScroll();
+
+  const selectedOption = getSelectedFrameOption();
+  await preloadImage(selectedOption.frameSrc);
+
   currentScreen = "camera";
   render();
   resetScrollPosition();
@@ -599,4 +632,7 @@ function loadImage(src) {
   });
 }
 
-render();
+(async function initApp() {
+  await preloadAllAssets();
+  render();
+})();
