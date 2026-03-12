@@ -52,9 +52,9 @@ function render() {
 
   if (currentScreen === 'camera') {
   app.innerHTML = `
-    <main class="min-h-screen bg-black text-white">
-      <section class="mx-auto flex min-h-screen max-w-md flex-col">
-        <header class="flex items-center justify-between px-4 py-4">
+    <main class="h-[100dvh] overflow-hidden bg-black text-white">
+      <section class="mx-auto flex h-full max-w-md flex-col px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-[max(16px,env(safe-area-inset-top))]">
+        <header class="flex shrink-0 items-center justify-between py-2">
           <button
             id="back-btn"
             class="rounded-full bg-white/10 px-4 py-2 text-sm font-medium backdrop-blur"
@@ -67,8 +67,8 @@ function render() {
           <div class="w-[68px]"></div>
         </header>
 
-        <div class="flex flex-1 items-center px-4 pb-4">
-          <div class="relative aspect-[9/16] w-full overflow-hidden rounded-3xl bg-neutral-900">
+        <div class="flex min-h-0 flex-1 items-center py-3">
+          <div class="relative mx-auto aspect-[9/16] max-h-full w-full overflow-hidden rounded-3xl bg-neutral-900">
             <video
               id="camera-preview"
               autoplay
@@ -85,7 +85,7 @@ function render() {
           </div>
         </div>
 
-        <footer class="px-4 pb-6">
+        <footer class="shrink-0 py-2">
           <div class="grid grid-cols-2 gap-3">
             <button
               id="switch-camera-btn"
@@ -118,31 +118,34 @@ function render() {
 }
 
   if (currentScreen === 'preview') {
-    app.innerHTML = `
-      <main class="min-h-screen bg-neutral-950 text-white">
-        <section class="mx-auto flex min-h-screen max-w-md flex-col px-4 py-4">
-          <header class="mb-4 flex items-center justify-between">
-            <button
-              id="retake-btn-top"
-              class="rounded-full bg-white/10 px-4 py-2 text-sm font-medium backdrop-blur"
-            >
-              重拍
-            </button>
+  app.innerHTML = `
+    <main class="h-[100dvh] overflow-hidden bg-neutral-950 text-white">
+      <section class="mx-auto flex h-full max-w-md flex-col px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-[max(16px,env(safe-area-inset-top))]">
+        <header class="mb-2 flex shrink-0 items-center justify-between py-2">
+          <button
+            id="retake-btn-top"
+            class="rounded-full bg-white/10 px-4 py-2 text-sm font-medium backdrop-blur"
+          >
+            重拍
+          </button>
 
-            <h1 class="text-sm font-medium">預覽成品</h1>
+          <h1 class="text-sm font-medium">預覽成品</h1>
 
-            <div class="w-[68px]"></div>
-          </header>
+          <div class="w-[68px]"></div>
+        </header>
 
-          <div class="flex-1 overflow-hidden rounded-3xl bg-black">
+        <div class="flex min-h-0 flex-1 items-center py-3">
+          <div class="mx-auto aspect-[9/16] max-h-full w-full overflow-hidden rounded-3xl bg-black">
             <img
               src="${capturedImage ?? ''}"
               alt="拍照成品"
               class="h-full w-full object-contain"
             />
           </div>
+        </div>
 
-          <footer class="mt-4 grid grid-cols-2 gap-3 pb-4">
+        <footer class="shrink-0 py-2">
+          <div class="grid grid-cols-2 gap-3">
             <button
               id="retake-btn"
               class="rounded-2xl bg-white/10 px-4 py-3 text-sm font-medium backdrop-blur"
@@ -151,20 +154,25 @@ function render() {
             </button>
 
             <button
-              id="download-btn"
+              id="share-btn"
               class="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-black"
             >
-              下載圖片
+              儲存 / 分享
             </button>
-          </footer>
-        </section>
-      </main>
-    `
+          </div>
 
-    document.querySelector('#retake-btn-top').addEventListener('click', reopenCamera)
-    document.querySelector('#retake-btn').addEventListener('click', reopenCamera)
-    document.querySelector('#download-btn').addEventListener('click', downloadImage)
-  }
+          <p class="mt-3 text-center text-xs leading-5 text-white/60">
+            iPhone 可點「儲存 / 分享」後，選擇「儲存影像」。
+          </p>
+        </footer>
+      </section>
+    </main>
+  `
+
+  document.querySelector('#retake-btn-top').addEventListener('click', reopenCamera)
+  document.querySelector('#retake-btn').addEventListener('click', reopenCamera)
+  document.querySelector('#share-btn').addEventListener('click', saveOrShareImage)
+}
 }
 
 async function openCameraScreen() {
@@ -295,13 +303,55 @@ function reopenCamera() {
   render()
 }
 
-function downloadImage() {
+async function saveOrShareImage() {
+  if (!capturedImage) return
+
+  try {
+    const file = dataUrlToFile(capturedImage, 'photo-frame.png')
+
+    if (
+      navigator.canShare &&
+      navigator.share &&
+      navigator.canShare({ files: [file] })
+    ) {
+      await navigator.share({
+        files: [file],
+        title: '活動拍照打卡框',
+        text: '我的拍照成品',
+      })
+      return
+    }
+
+    downloadImageFallback()
+  } catch (error) {
+    console.error('分享失敗，改用下載方式：', error)
+    downloadImageFallback()
+  }
+}
+
+function downloadImageFallback() {
   if (!capturedImage) return
 
   const link = document.createElement('a')
   link.href = capturedImage
   link.download = 'photo-frame.png'
   link.click()
+}
+
+function dataUrlToFile(dataUrl, filename) {
+  const [meta, base64] = dataUrl.split(',')
+  const mimeMatch = meta.match(/data:(.*?);base64/)
+  const mime = mimeMatch ? mimeMatch[1] : 'image/png'
+
+  const binary = atob(base64)
+  const len = binary.length
+  const bytes = new Uint8Array(len)
+
+  for (let i = 0; i < len; i += 1) {
+    bytes[i] = binary.charCodeAt(i)
+  }
+
+  return new File([bytes], filename, { type: mime })
 }
 
 function loadImage(src) {
