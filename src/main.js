@@ -30,6 +30,8 @@ const FRAME_OPTIONS = {
   },
 };
 
+const PREVIEW_FRAME_SCALE = 0.92;
+const PREVIEW_FRAME_OFFSET_Y = 0;
 const imagePreloadCache = new Map();
 
 function preloadImage(src) {
@@ -259,12 +261,18 @@ function render() {
     class="h-full w-full object-cover"
   ></video>
 
+  <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
   <img
     id="frame-overlay"
     src="${frameOption.frameSrc}"
     alt="拍照框"
-    class="pointer-events-none absolute inset-0 h-full w-full object-cover"
+    class="h-full w-full object-contain"
+    style="
+      transform: translateY(${PREVIEW_FRAME_OFFSET_Y}px) scale(${PREVIEW_FRAME_SCALE});
+      transform-origin: center;
+    "
   />
+</div>
 
   <div
     id="camera-processing-overlay"
