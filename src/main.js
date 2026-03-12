@@ -20,9 +20,9 @@ const OUTPUT_RATIO = OUTPUT_WIDTH / OUTPUT_HEIGHT;
 
 const DATE_OPTIONS = [
   { id: "", label: "不顯示" },
-  { id: "3/20", label: "3/20" },
-  { id: "3/21", label: "3/21" },
-  { id: "3/22", label: "3/22" },
+  { id: "2026.03.20", label: "2026.03.20" },
+  { id: "2026.03.21", label: "2026.03.21" },
+  { id: "2026.03.22", label: "2026.03.22" },
 ];
 
 const FRAME_OPTIONS = {
@@ -34,16 +34,16 @@ const FRAME_OPTIONS = {
     frameSrc: `${import.meta.env.BASE_URL}frame-a.png`,
     dateText: {
       enabled: true,
-      x: 540,
-      y: 250,
-      fontSize: 42,
+      x: 860,
+      y: 1670,
+      fontSize: 34,
       color: "#FFFFFF",
-      strokeColor: "#333333",
-      strokeWidth: 3,
+      strokeColor: "#FF6B8A",
+      strokeWidth: 4,
       align: "center",
       fontWeight: "700",
       fontFamily:
-        '"Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif',
+        '"Arial Rounded MT Bold", "Trebuchet MS", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif',
     },
   },
   b: {
@@ -54,16 +54,16 @@ const FRAME_OPTIONS = {
     frameSrc: `${import.meta.env.BASE_URL}frame-b.png`,
     dateText: {
       enabled: true,
-      x: 540,
-      y: 250,
-      fontSize: 42,
+      x: 860,
+      y: 1670,
+      fontSize: 34,
       color: "#FFFFFF",
-      strokeColor: "#333333",
-      strokeWidth: 3,
+      strokeColor: "#FF6B8A",
+      strokeWidth: 4,
       align: "center",
       fontWeight: "700",
       fontFamily:
-        '"Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif',
+        '"Arial Rounded MT Bold", "Trebuchet MS", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif',
     },
   },
 };
@@ -272,7 +272,33 @@ function updatePreviewLayout() {
   layoutPreviewFrame();
   requestAnimationFrame(() => {
     layoutPreviewVideo();
+    layoutPreviewDateText();
   });
+}
+
+function layoutPreviewDateText() {
+  const wrapper = document.querySelector("#camera-frame-wrapper");
+  const label = document.querySelector("#date-preview-label");
+  const frameOption = getSelectedFrameOption();
+
+  if (!wrapper || !label) return;
+  if (!frameOption.dateText || !frameOption.dateText.enabled) return;
+
+  const wrapperRect = wrapper.getBoundingClientRect();
+  const scaleX = wrapperRect.width / OUTPUT_WIDTH;
+  const scaleY = wrapperRect.height / OUTPUT_HEIGHT;
+  const scale = Math.min(scaleX, scaleY);
+
+  const left = frameOption.dateText.x * scaleX;
+  const top = frameOption.dateText.y * scaleY;
+  const fontSize = frameOption.dateText.fontSize * scale;
+  const strokeWidth = (frameOption.dateText.strokeWidth || 3) * scale;
+
+  label.style.left = `${left}px`;
+  label.style.top = `${top}px`;
+  label.style.transform = "translate(-50%, -50%)";
+  label.style.fontSize = `${fontSize}px`;
+  label.style.webkitTextStroke = `${strokeWidth}px ${frameOption.dateText.strokeColor}`;
 }
 
 function bindPreviewResize() {
@@ -491,35 +517,31 @@ function render() {
                 class="pointer-events-none absolute inset-0 h-full w-full object-fill"
               />
 
-              <div
-                id="date-preview-text"
-                class="pointer-events-none absolute inset-0"
-              >
-                ${
-                  selectedDate && frameOption.dateText?.enabled
-                    ? `
-                      <div
-                        style="
-                          position: absolute;
-                          left: ${frameOption.dateText.x}px;
-                          top: ${frameOption.dateText.y}px;
-                          transform: translate(-50%, -50%);
-                          color: ${frameOption.dateText.color};
-                          font-size: ${frameOption.dateText.fontSize}px;
-                          font-weight: ${frameOption.dateText.fontWeight};
-                          font-family: ${frameOption.dateText.fontFamily};
-                          -webkit-text-stroke: ${frameOption.dateText.strokeWidth}px ${frameOption.dateText.strokeColor};
-                          text-align: ${frameOption.dateText.align};
-                          white-space: nowrap;
-                        "
-                      >
-                        ${selectedDate}
-                      </div>
-                    `
-                    : ""
-                }
-              </div>
-
+              ${
+                selectedDate && frameOption.dateText?.enabled
+                  ? `
+      <div
+        id="date-preview-text"
+        class="pointer-events-none absolute inset-0"
+      >
+        <div
+          id="date-preview-label"
+          style="
+            position: absolute;
+            color: ${frameOption.dateText.color};
+            font-weight: ${frameOption.dateText.fontWeight};
+            font-family: ${frameOption.dateText.fontFamily};
+            text-align: ${frameOption.dateText.align};
+            white-space: nowrap;
+            line-height: 1;
+          "
+        >
+          ${selectedDate}
+        </div>
+      </div>
+    `
+                  : ""
+              }
               <div
                 id="camera-processing-overlay"
                 class="absolute inset-0 z-10 hidden flex-col items-center justify-center bg-black/55 backdrop-blur-sm"
