@@ -51,71 +51,71 @@ function render() {
   }
 
   if (currentScreen === 'camera') {
-    app.innerHTML = `
-      <main class="min-h-screen bg-black text-white">
-        <section class="mx-auto flex min-h-screen max-w-md flex-col">
-          <header class="flex items-center justify-between px-4 py-4">
+  app.innerHTML = `
+    <main class="min-h-screen bg-black text-white">
+      <section class="mx-auto flex min-h-screen max-w-md flex-col">
+        <header class="flex items-center justify-between px-4 py-4">
+          <button
+            id="back-btn"
+            class="rounded-full bg-white/10 px-4 py-2 text-sm font-medium backdrop-blur"
+          >
+            返回
+          </button>
+
+          <h1 class="text-sm font-medium">拍照預覽</h1>
+
+          <div class="w-[68px]"></div>
+        </header>
+
+        <div class="flex flex-1 items-center px-4 pb-4">
+          <div class="relative aspect-[9/16] w-full overflow-hidden rounded-3xl bg-neutral-900">
+            <video
+              id="camera-preview"
+              autoplay
+              playsinline
+              muted
+              class="h-full w-full object-cover"
+            ></video>
+
+            <img
+              src="${FRAME_SRC}"
+              alt="拍照框"
+              class="pointer-events-none absolute inset-0 h-full w-full object-cover"
+            />
+          </div>
+        </div>
+
+        <footer class="px-4 pb-6">
+          <div class="grid grid-cols-2 gap-3">
             <button
-              id="back-btn"
-              class="rounded-full bg-white/10 px-4 py-2 text-sm font-medium backdrop-blur"
+              id="switch-camera-btn"
+              class="rounded-2xl bg-white/10 px-4 py-3 text-sm font-medium backdrop-blur"
             >
-              返回
+              切換鏡頭
             </button>
 
-            <h1 class="text-sm font-medium">拍照預覽</h1>
-
-            <div class="w-[68px]"></div>
-          </header>
-
-          <div class="relative flex-1 px-4 pb-4">
-            <div class="relative h-full min-h-[60vh] overflow-hidden rounded-3xl bg-neutral-900">
-              <video
-                id="camera-preview"
-                autoplay
-                playsinline
-                muted
-                class="h-full w-full object-cover"
-              ></video>
-
-              <img
-                src="${FRAME_SRC}"
-                alt="拍照框"
-                class="pointer-events-none absolute inset-0 h-full w-full object-cover"
-              />
-            </div>
+            <button
+              id="capture-btn"
+              class="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-black"
+            >
+              拍照
+            </button>
           </div>
+        </footer>
+      </section>
+    </main>
+  `
 
-          <footer class="px-4 pb-6">
-            <div class="grid grid-cols-2 gap-3">
-              <button
-                id="switch-camera-btn"
-                class="rounded-2xl bg-white/10 px-4 py-3 text-sm font-medium backdrop-blur"
-              >
-                切換鏡頭
-              </button>
+  document.querySelector('#back-btn').addEventListener('click', goHome)
+  document
+    .querySelector('#switch-camera-btn')
+    .addEventListener('click', switchCamera)
+  document
+    .querySelector('#capture-btn')
+    .addEventListener('click', capturePhoto)
 
-              <button
-                id="capture-btn"
-                class="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-black"
-              >
-                拍照
-              </button>
-            </div>
-          </footer>
-        </section>
-      </main>
-    `
-
-    document.querySelector('#back-btn').addEventListener('click', goHome)
-    document
-      .querySelector('#switch-camera-btn')
-      .addEventListener('click', switchCamera)
-    document
-      .querySelector('#capture-btn')
-      .addEventListener('click', capturePhoto)
-
-    startCamera()
-  }
+  startCamera()
+}
 
   if (currentScreen === 'preview') {
     app.innerHTML = `
@@ -217,31 +217,71 @@ async function capturePhoto() {
   const video = document.querySelector('#camera-preview')
   if (!video) return
 
-  const canvas = document.createElement('canvas')
-  const ctx = canvas.getContext('2d')
+  const sourceWidth = video.videoWidth
+  const sourceHeight = video.videoHeight
 
-  const width = video.videoWidth
-  const height = video.videoHeight
-
-  if (!width || !height) {
+  if (!sourceWidth || !sourceHeight) {
     alert('相機畫面尚未準備完成，請稍後再試一次。')
     return
   }
 
-  canvas.width = width
-  canvas.height = height
+  const outputWidth = 1080
+  const outputHeight = 1920
+
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+
+  canvas.width = outputWidth
+  canvas.height = outputHeight
+
+  const sourceRatio = sourceWidth / sourceHeight
+  const outputRatio = outputWidth / outputHeight
+
+  let cropWidth = sourceWidth
+  let cropHeight = sourceHeight
+  let cropX = 0
+  let cropY = 0
+
+  if (sourceRatio > outputRatio) {
+    cropWidth = sourceHeight * outputRatio
+    cropX = (sourceWidth - cropWidth) / 2
+  } else {
+    cropHeight = sourceWidth / outputRatio
+    cropY = (sourceHeight - cropHeight) / 2
+  }
 
   if (facingMode === 'user') {
-    ctx.translate(width, 0)
+    ctx.save()
+    ctx.translate(outputWidth, 0)
     ctx.scale(-1, 1)
-    ctx.drawImage(video, 0, 0, width, height)
-    ctx.setTransform(1, 0, 0, 1, 0, 0)
+    ctx.drawImage(
+      video,
+      cropX,
+      cropY,
+      cropWidth,
+      cropHeight,
+      0,
+      0,
+      outputWidth,
+      outputHeight
+    )
+    ctx.restore()
   } else {
-    ctx.drawImage(video, 0, 0, width, height)
+    ctx.drawImage(
+      video,
+      cropX,
+      cropY,
+      cropWidth,
+      cropHeight,
+      0,
+      0,
+      outputWidth,
+      outputHeight
+    )
   }
 
   const frameImg = await loadImage(FRAME_SRC)
-  ctx.drawImage(frameImg, 0, 0, width, height)
+  ctx.drawImage(frameImg, 0, 0, outputWidth, outputHeight)
 
   capturedImage = canvas.toDataURL('image/png')
 
