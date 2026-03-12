@@ -281,10 +281,32 @@ function renderFrameCard(option) {
     </button>
   `;
 }
+function resetScrollPosition() {
+  window.scrollTo(0, 0);
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+
+  requestAnimationFrame(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  });
+}
+
+function lockPageScroll() {
+  document.body.style.overflow = "hidden";
+}
+
+function unlockPageScroll() {
+  document.body.style.overflow = "";
+}
 
 async function openCameraScreen() {
+  resetScrollPosition();
+  lockPageScroll();
   currentScreen = "camera";
   render();
+  resetScrollPosition();
 }
 
 async function startCamera() {
@@ -319,8 +341,11 @@ function stopCamera() {
 
 function goHome() {
   stopCamera();
+  unlockPageScroll();
+  resetScrollPosition();
   currentScreen = "home";
   render();
+  resetScrollPosition();
 }
 
 async function switchCamera() {
@@ -406,8 +431,11 @@ async function capturePhoto() {
 }
 
 function reopenCamera() {
+  resetScrollPosition();
+  lockPageScroll();
   currentScreen = "camera";
   render();
+  resetScrollPosition();
 }
 
 async function saveOrShareImage() {
