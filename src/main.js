@@ -3,6 +3,9 @@ import './style.css'
 let currentScreen = 'home'
 let stream = null
 let facingMode = 'environment'
+let capturedImage = null
+
+const FRAME_SRC = `${import.meta.env.BASE_URL}frame.png`
 
 function render() {
   const app = document.querySelector('#app')
@@ -74,11 +77,11 @@ function render() {
                 class="h-full w-full object-cover"
               ></video>
 
-              <div class="pointer-events-none absolute inset-0 border-[12px] border-white/20 rounded-3xl"></div>
-
-              <div class="pointer-events-none absolute inset-x-8 top-8 rounded-2xl border border-dashed border-white/40 p-3 text-center text-xs text-white/80">
-                這裡之後會放活動拍照框
-              </div>
+              <img
+                src="${FRAME_SRC}"
+                alt="拍照框"
+                class="pointer-events-none absolute inset-0 h-full w-full object-cover"
+              />
             </div>
           </div>
 
@@ -107,8 +110,60 @@ function render() {
     document
       .querySelector('#switch-camera-btn')
       .addEventListener('click', switchCamera)
+    document
+      .querySelector('#capture-btn')
+      .addEventListener('click', capturePhoto)
 
     startCamera()
+  }
+
+  if (currentScreen === 'preview') {
+    app.innerHTML = `
+      <main class="min-h-screen bg-neutral-950 text-white">
+        <section class="mx-auto flex min-h-screen max-w-md flex-col px-4 py-4">
+          <header class="mb-4 flex items-center justify-between">
+            <button
+              id="retake-btn-top"
+              class="rounded-full bg-white/10 px-4 py-2 text-sm font-medium backdrop-blur"
+            >
+              重拍
+            </button>
+
+            <h1 class="text-sm font-medium">預覽成品</h1>
+
+            <div class="w-[68px]"></div>
+          </header>
+
+          <div class="flex-1 overflow-hidden rounded-3xl bg-black">
+            <img
+              src="${capturedImage ?? ''}"
+              alt="拍照成品"
+              class="h-full w-full object-contain"
+            />
+          </div>
+
+          <footer class="mt-4 grid grid-cols-2 gap-3 pb-4">
+            <button
+              id="retake-btn"
+              class="rounded-2xl bg-white/10 px-4 py-3 text-sm font-medium backdrop-blur"
+            >
+              重新拍照
+            </button>
+
+            <button
+              id="download-btn"
+              class="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-black"
+            >
+              下載圖片
+            </button>
+          </footer>
+        </section>
+      </main>
+    `
+
+    document.querySelector('#retake-btn-top').addEventListener('click', reopenCamera)
+    document.querySelector('#retake-btn').addEventListener('click', reopenCamera)
+    document.querySelector('#download-btn').addEventListener('click', downloadImage)
   }
 }
 
@@ -136,7 +191,7 @@ async function startCamera() {
     video.srcObject = stream
   } catch (error) {
     console.error('無法開啟相機：', error)
-    alert('無法開啟相機，請確認你已允許相機權限，並使用手機瀏覽器開啟。')
+    alert('無法開啟相機，請確認你已允許相機權限。')
   }
 }
 
@@ -156,6 +211,66 @@ function goHome() {
 async function switchCamera() {
   facingMode = facingMode === 'environment' ? 'user' : 'environment'
   await startCamera()
+}
+
+async function capturePhoto() {
+  const video = document.querySelector('#camera-preview')
+  if (!video) return
+
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+
+  const width = video.videoWidth
+  const height = video.videoHeight
+
+  if (!width || !height) {
+    alert('相機畫面尚未準備完成，請稍後再試一次。')
+    return
+  }
+
+  canvas.width = width
+  canvas.height = height
+
+  if (facingMode === 'user') {
+    ctx.translate(width, 0)
+    ctx.scale(-1, 1)
+    ctx.drawImage(video, 0, 0, width, height)
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
+  } else {
+    ctx.drawImage(video, 0, 0, width, height)
+  }
+
+  const frameImg = await loadImage(FRAME_SRC)
+  ctx.drawImage(frameImg, 0, 0, width, height)
+
+  capturedImage = canvas.toDataURL('image/png')
+
+  stopCamera()
+  currentScreen = 'preview'
+  render()
+}
+
+function reopenCamera() {
+  currentScreen = 'camera'
+  render()
+}
+
+function downloadImage() {
+  if (!capturedImage) return
+
+  const link = document.createElement('a')
+  link.href = capturedImage
+  link.download = 'photo-frame.png'
+  link.click()
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = reject
+    img.src = src
+  })
 }
 
 render()
