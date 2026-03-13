@@ -8,6 +8,7 @@ let capturedImage = null;
 let selectedFrame = "a";
 let selectedDate = "";
 let selectedDateLabel = "";
+let selectedFilter = "original";
 let currentTrack = null;
 let isProcessingPhoto = false;
 
@@ -60,6 +61,11 @@ const TEXTS = {
     cute: "可愛版",
     simple: "簡約版",
 
+    filterTitle: "濾鏡",
+    filterOriginal: "原圖",
+    filterSoft: "柔亮",
+    filterCool: "冷透",
+
     cameraError: "無法開啟相機，請確認你已允許相機權限。",
     cameraNotReady: "相機畫面尚未準備完成，請稍後再試一次。",
     captureError: "拍照失敗，請再試一次。",
@@ -104,6 +110,11 @@ const TEXTS = {
     styleB: "Style B",
     cute: "Cute",
     simple: "Simple",
+
+    filterTitle: "Filter",
+    filterOriginal: "Original",
+    filterSoft: "Soft Glow",
+    filterCool: "Cool Clear",
 
     cameraError:
       "Unable to access the camera. Please make sure camera permission is allowed.",
@@ -154,6 +165,11 @@ const TEXTS = {
     cute: "かわいい",
     simple: "シンプル",
 
+    filterTitle: "フィルター",
+    filterOriginal: "オリジナル",
+    filterSoft: "やわらか",
+    filterCool: "クール",
+
     cameraError: "カメラを開けません。カメラの使用許可を確認してください。",
     cameraNotReady:
       "カメラ映像の準備がまだできていません。少し待ってからもう一度お試しください。",
@@ -201,11 +217,16 @@ const TEXTS = {
     cute: "귀여움",
     simple: "심플",
 
+    filterTitle: "필터",
+    filterOriginal: "원본",
+    filterSoft: "부드럽게",
+    filterCool: "차분하게",
+
     cameraError:
       "카메라를 열 수 없습니다. 카메라 권한을 허용했는지 확인해 주세요.",
     cameraNotReady:
       "카메라 화면이 아직 준비되지 않았습니다. 잠시 후 다시 시도해 주세요.",
-    captureError: "촬영에 실패했습니다. 다시 시도해 주세요.",
+    captureError: "촬영에 실패했습니다. 다시 시도해 주세요。",
   },
 };
 
@@ -215,6 +236,33 @@ const DATE_OPTIONS = [
   { id: "03.21", label: "03.21", value: "2026.03.21" },
   { id: "03.22", label: "03.22", value: "2026.03.22" },
 ];
+
+const FILTER_OPTIONS = {
+  original: {
+    id: "original",
+    textKey: "filterOriginal",
+    previewCss: "none",
+    canvasFilter: "none",
+    overlayColor: null,
+    overlayAlpha: 0,
+  },
+  soft: {
+    id: "soft",
+    textKey: "filterSoft",
+    previewCss: "brightness(1.12) contrast(0.98) saturate(1.06)",
+    canvasFilter: "brightness(1.12) contrast(0.98) saturate(1.06)",
+    overlayColor: "#FFE8D9",
+    overlayAlpha: 0.08,
+  },
+  cool: {
+    id: "cool",
+    textKey: "filterCool",
+    previewCss: "brightness(1.06) contrast(1.03) saturate(0.94)",
+    canvasFilter: "brightness(1.06) contrast(1.03) saturate(0.94)",
+    overlayColor: "#DDEBFF",
+    overlayAlpha: 0.08,
+  },
+};
 
 const FRAME_OPTIONS = {
   a: {
@@ -260,6 +308,10 @@ const FRAME_OPTIONS = {
 };
 
 const imagePreloadCache = new Map();
+
+function getSelectedFilterOption() {
+  return FILTER_OPTIONS[selectedFilter] || FILTER_OPTIONS.original;
+}
 
 function preloadImage(src) {
   if (!src) return Promise.resolve(null);
@@ -315,6 +367,28 @@ function markPreviewLoaded(frameId) {
   if (image) {
     image.classList.remove("opacity-0");
     image.classList.add("opacity-100");
+  }
+}
+
+function applyPreviewFilter() {
+  const video = document.querySelector("#camera-preview");
+  const overlay = document.querySelector("#filter-overlay");
+  const filter = getSelectedFilterOption();
+
+  if (video) {
+    video.style.filter = filter.previewCss || "none";
+  }
+
+  if (overlay) {
+    if (filter.overlayColor && filter.overlayAlpha > 0) {
+      overlay.style.background = filter.overlayColor;
+      overlay.style.opacity = `${filter.overlayAlpha}`;
+      overlay.classList.remove("hidden");
+    } else {
+      overlay.style.background = "transparent";
+      overlay.style.opacity = "0";
+      overlay.classList.add("hidden");
+    }
   }
 }
 
@@ -503,6 +577,7 @@ function updatePreviewLayout() {
   requestAnimationFrame(() => {
     layoutPreviewVideo();
     layoutPreviewDateText();
+    applyPreviewFilter();
   });
 }
 
@@ -513,6 +588,23 @@ function bindPreviewResize() {
 
 function unbindPreviewResize() {
   window.removeEventListener("resize", updatePreviewLayout);
+}
+
+function applyCanvasFilter(ctx) {
+  const filter = getSelectedFilterOption();
+  ctx.filter = filter.canvasFilter || "none";
+}
+
+function drawFilterOverlay(ctx) {
+  const filter = getSelectedFilterOption();
+
+  if (!filter.overlayColor || !(filter.overlayAlpha > 0)) return;
+
+  ctx.save();
+  ctx.globalAlpha = filter.overlayAlpha;
+  ctx.fillStyle = filter.overlayColor;
+  ctx.fillRect(0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT);
+  ctx.restore();
 }
 
 function drawDateText(ctx, frameOption, text) {
@@ -551,26 +643,53 @@ function drawDateText(ctx, frameOption, text) {
 function renderLanguageSwitcher(t) {
   return `
     <div class="mb-5 flex justify-center gap-2">
-      <button type="button" data-lang="zh" class="rounded-full border px-3 py-1 text-xs transition ${
+      <button type="button" data-lang="zh" class="rounded-full border px-2.5 py-1 text-[11px] transition ${
         currentLanguage === "zh"
           ? "border-black bg-black text-white"
           : "border-neutral-300 bg-white text-neutral-700"
       }">${t.langZh}</button>
-      <button type="button" data-lang="en" class="rounded-full border px-3 py-1 text-xs transition ${
+      <button type="button" data-lang="en" class="rounded-full border px-2.5 py-1 text-[11px] transition ${
         currentLanguage === "en"
           ? "border-black bg-black text-white"
           : "border-neutral-300 bg-white text-neutral-700"
       }">${t.langEn}</button>
-      <button type="button" data-lang="ja" class="rounded-full border px-3 py-1 text-xs transition ${
+      <button type="button" data-lang="ja" class="rounded-full border px-2.5 py-1 text-[11px] transition ${
         currentLanguage === "ja"
           ? "border-black bg-black text-white"
           : "border-neutral-300 bg-white text-neutral-700"
       }">${t.langJa}</button>
-      <button type="button" data-lang="ko" class="rounded-full border px-3 py-1 text-xs transition ${
+      <button type="button" data-lang="ko" class="rounded-full border px-2.5 py-1 text-[11px] transition ${
         currentLanguage === "ko"
           ? "border-black bg-black text-white"
           : "border-neutral-300 bg-white text-neutral-700"
       }">${t.langKo}</button>
+    </div>
+  `;
+}
+
+function renderFilterButtons(t) {
+  return `
+    <div class="shrink-0 py-2">
+      <div class="mb-2 text-center text-xs text-white/60">${t.filterTitle}</div>
+      <div class="flex gap-2 overflow-x-auto whitespace-nowrap pb-1">
+        ${Object.values(FILTER_OPTIONS)
+          .map(
+            (filter) => `
+              <button
+                type="button"
+                data-filter-select="${filter.id}"
+                class="rounded-full border px-3 py-2 text-sm transition shrink-0 ${
+                  selectedFilter === filter.id
+                    ? "border-white bg-white text-black"
+                    : "border-white/20 bg-white/10 text-white"
+                }"
+              >
+                ${t[filter.textKey]}
+              </button>
+            `,
+          )
+          .join("")}
+      </div>
     </div>
   `;
 }
@@ -587,14 +706,14 @@ function render() {
         <section class="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-8">
           <div class="w-full rounded-3xl bg-white p-6 shadow-lg">
             <div class="mb-3 text-center">
-  <h1 class="text-2xl font-bold">${t.title}</h1>
-</div>
+              <h1 class="text-2xl font-bold">${t.title}</h1>
+            </div>
 
-<p class="mb-3 text-center text-sm text-neutral-500">
-  ${t.studio}
-</p>
+            <p class="mb-3 text-center text-sm text-neutral-500">
+              ${t.studio}
+            </p>
 
-${renderLanguageSwitcher(t)}
+            ${renderLanguageSwitcher(t)}
 
             <div class="mb-5">
               <div class="mb-2 flex items-center justify-between">
@@ -756,6 +875,11 @@ ${renderLanguageSwitcher(t)}
                 class="absolute top-0 left-0"
               ></video>
 
+              <div
+                id="filter-overlay"
+                class="pointer-events-none absolute inset-0 hidden"
+              ></div>
+
               <img
                 id="frame-overlay"
                 src="${selectedOption.frameSrc}"
@@ -799,6 +923,8 @@ ${renderLanguageSwitcher(t)}
             </div>
           </div>
 
+          ${renderFilterButtons(t)}
+
           <footer class="shrink-0 py-2">
             <div class="grid grid-cols-2 gap-3">
               <button
@@ -832,6 +958,15 @@ ${renderLanguageSwitcher(t)}
         .querySelector("#capture-btn")
         .addEventListener("click", capturePhoto);
     }
+
+    document.querySelectorAll("[data-filter-select]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const filterId = button.dataset.filterSelect;
+        if (!filterId) return;
+        selectedFilter = filterId;
+        render();
+      });
+    });
 
     startCamera();
     requestAnimationFrame(() => {
@@ -1124,8 +1259,10 @@ async function capturePhoto() {
       OUTPUT_HEIGHT,
     );
 
+    ctx.save();
+    applyCanvasFilter(ctx);
+
     if (facingMode === "user") {
-      ctx.save();
       ctx.translate(OUTPUT_WIDTH, 0);
       ctx.scale(-1, 1);
       ctx.drawImage(
@@ -1139,7 +1276,6 @@ async function capturePhoto() {
         OUTPUT_WIDTH,
         OUTPUT_HEIGHT,
       );
-      ctx.restore();
     } else {
       ctx.drawImage(
         video,
@@ -1153,6 +1289,9 @@ async function capturePhoto() {
         OUTPUT_HEIGHT,
       );
     }
+
+    ctx.restore();
+    drawFilterOverlay(ctx);
 
     const frameOption = getSelectedFrameOption();
     const cachedFrameImg = await preloadImage(frameOption.frameSrc);
