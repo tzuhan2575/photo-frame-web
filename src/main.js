@@ -1136,6 +1136,8 @@ async function openCameraScreen() {
   resetScrollPosition();
   lockPageScroll();
 
+  selectedFilter = "original";
+
   const selectedOption = getSelectedFrameOption();
   await preloadImage(selectedOption.frameSrc);
 
