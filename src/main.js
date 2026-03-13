@@ -63,7 +63,7 @@ const TEXTS = {
 
     filterTitle: "濾鏡",
     filterOriginal: "原圖",
-    filterSoft: "柔亮",
+    filterSoft: "拍貼感",
     filterLowLight: "低光加強",
 
     cameraError: "無法開啟相機，請確認你已允許相機權限。",
@@ -113,7 +113,7 @@ const TEXTS = {
 
     filterTitle: "Filter",
     filterOriginal: "Original",
-    filterSoft: "Soft Glow",
+    filterSoft: "Photo Booth",
     filterLowLight: "Low Light",
 
     cameraError:
@@ -167,7 +167,7 @@ const TEXTS = {
 
     filterTitle: "フィルター",
     filterOriginal: "オリジナル",
-    filterSoft: "やわらか",
+    filterSoft: "プリクラ風",
     filterLowLight: "低光補正",
 
     cameraError: "カメラを開けません。カメラの使用許可を確認してください。",
@@ -219,7 +219,7 @@ const TEXTS = {
 
     filterTitle: "필터",
     filterOriginal: "원본",
-    filterSoft: "부드럽게",
+    filterSoft: "인생네컷 감성",
     filterLowLight: "저조도 보정",
 
     cameraError:
@@ -249,10 +249,10 @@ const FILTER_OPTIONS = {
   soft: {
     id: "soft",
     textKey: "filterSoft",
-    previewCss: "brightness(1.12) contrast(0.98) saturate(1.06)",
-    canvasFilter: "brightness(1.12) contrast(0.98) saturate(1.06)",
-    overlayColor: "#FFE8D9",
-    overlayAlpha: 0.08,
+    previewCss: "brightness(1.28) contrast(0.93) saturate(1.1)",
+    canvasFilter: "brightness(1.28) contrast(0.93) saturate(1.1)",
+    overlayColor: "#FFF5F7",
+    overlayAlpha: 0.12,
   },
 };
 
