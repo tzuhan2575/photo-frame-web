@@ -257,10 +257,10 @@ const FILTER_OPTIONS = {
   lowlight: {
     id: "lowlight",
     textKey: "filterLowLight",
-    previewCss: "brightness(1.22) contrast(1.04) saturate(1.08)",
-    canvasFilter: "brightness(1.22) contrast(1.04) saturate(1.08)",
-    overlayColor: "#FFE7C8",
-    overlayAlpha: 0.12,
+    previewCss: "brightness(1.32) contrast(1.08) saturate(1.1)",
+    canvasFilter: "brightness(1.32) contrast(1.08) saturate(1.1)",
+    overlayColor: "#FFE4BF",
+    overlayAlpha: 0.16,
   },
 };
 
