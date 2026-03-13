@@ -64,7 +64,7 @@ const TEXTS = {
     filterTitle: "濾鏡",
     filterOriginal: "原圖",
     filterSoft: "柔亮",
-    filterCool: "冷透",
+    filterLowLight: "低光加強",
 
     cameraError: "無法開啟相機，請確認你已允許相機權限。",
     cameraNotReady: "相機畫面尚未準備完成，請稍後再試一次。",
@@ -114,7 +114,7 @@ const TEXTS = {
     filterTitle: "Filter",
     filterOriginal: "Original",
     filterSoft: "Soft Glow",
-    filterCool: "Cool Clear",
+    filterLowLight: "Low Light",
 
     cameraError:
       "Unable to access the camera. Please make sure camera permission is allowed.",
@@ -168,7 +168,7 @@ const TEXTS = {
     filterTitle: "フィルター",
     filterOriginal: "オリジナル",
     filterSoft: "やわらか",
-    filterCool: "クール",
+    filterLowLight: "低光補正",
 
     cameraError: "カメラを開けません。カメラの使用許可を確認してください。",
     cameraNotReady:
@@ -220,7 +220,7 @@ const TEXTS = {
     filterTitle: "필터",
     filterOriginal: "원본",
     filterSoft: "부드럽게",
-    filterCool: "차분하게",
+    filterLowLight: "저조도 보정",
 
     cameraError:
       "카메라를 열 수 없습니다. 카메라 권한을 허용했는지 확인해 주세요.",
@@ -254,13 +254,13 @@ const FILTER_OPTIONS = {
     overlayColor: "#FFE8D9",
     overlayAlpha: 0.08,
   },
-  cool: {
-    id: "cool",
-    textKey: "filterCool",
-    previewCss: "brightness(1.06) contrast(1.03) saturate(0.94)",
-    canvasFilter: "brightness(1.06) contrast(1.03) saturate(0.94)",
-    overlayColor: "#DDEBFF",
-    overlayAlpha: 0.08,
+  lowlight: {
+    id: "lowlight",
+    textKey: "filterLowLight",
+    previewCss: "brightness(1.22) contrast(1.04) saturate(1.08)",
+    canvasFilter: "brightness(1.22) contrast(1.04) saturate(1.08)",
+    overlayColor: "#FFE7C8",
+    overlayAlpha: 0.12,
   },
 };
 
