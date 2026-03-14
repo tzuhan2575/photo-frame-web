@@ -58,6 +58,8 @@ const TEXTS = {
 
     styleA: "樣式 A",
     styleB: "樣式 B",
+    styleTzuyu: "子瑜款",
+    styleSana: "紗夏款",
     cute: "可愛版",
     simple: "簡約版",
 
@@ -108,6 +110,8 @@ const TEXTS = {
 
     styleA: "Style A",
     styleB: "Style B",
+    styleTzuyu: "Tzuyu",
+    styleSana: "Sana",
     cute: "Cute",
     simple: "Simple",
 
@@ -162,6 +166,8 @@ const TEXTS = {
 
     styleA: "スタイル A",
     styleB: "スタイル B",
+    styleTzuyu: "ツウィ",
+    styleSana: "サナ",
     cute: "かわいい",
     simple: "シンプル",
 
@@ -214,6 +220,8 @@ const TEXTS = {
 
     styleA: "스타일 A",
     styleB: "스타일 B",
+    styleTzuyu: "쯔위",
+    styleSana: "사나",
     cute: "귀여움",
     simple: "심플",
 
@@ -283,6 +291,46 @@ const FRAME_OPTIONS = {
     descriptionKey: "simple",
     previewSrc: `${import.meta.env.BASE_URL}preview-b.png`,
     frameSrc: `${import.meta.env.BASE_URL}frame-b.png`,
+    dateText: {
+      enabled: true,
+      x: 930,
+      y: 1880,
+      fontSize: 34,
+      color: "#FFFFFF",
+      strokeColor: "transparent",
+      strokeWidth: 0,
+      align: "center",
+      fontWeight: "700",
+      fontFamily:
+        '"Arial Rounded MT Bold", "Trebuchet MS", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif',
+    },
+  },
+  tzuyu: {
+    id: "tzuyu",
+    nameKey: "styleTzuyu",
+    descriptionKey: "cute",
+    previewSrc: `${import.meta.env.BASE_URL}preview-tzuyu.png`,
+    frameSrc: `${import.meta.env.BASE_URL}frame-tzuyu.png`,
+    dateText: {
+      enabled: true,
+      x: 930,
+      y: 1880,
+      fontSize: 34,
+      color: "#FFFFFF",
+      strokeColor: "transparent",
+      strokeWidth: 0,
+      align: "center",
+      fontWeight: "700",
+      fontFamily:
+        '"Arial Rounded MT Bold", "Trebuchet MS", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif',
+    },
+  },
+  sana: {
+    id: "sana",
+    nameKey: "styleSana",
+    descriptionKey: "cute",
+    previewSrc: `${import.meta.env.BASE_URL}preview-sana.png`,
+    frameSrc: `${import.meta.env.BASE_URL}frame-sana.png`,
     dateText: {
       enabled: true,
       x: 930,
@@ -717,8 +765,9 @@ function render() {
               </p>
 
               <div class="grid grid-cols-2 gap-3">
-                ${renderFrameCard(FRAME_OPTIONS.a, t)}
-                ${renderFrameCard(FRAME_OPTIONS.b, t)}
+                ${Object.values(FRAME_OPTIONS)
+                  .map((option) => renderFrameCard(option, t))
+                  .join("")}
               </div>
             </div>
 
